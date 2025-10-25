@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AEP Grid Challenge - N-1 Contingency Analysis</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .nav-links {
+            margin-top: 15px;
+        }
+        
+        .nav-links a {
+            color: #667eea;
+            text-decoration: none;
+            margin: 0 15px;
+            padding: 8px 16px;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+        }
+        
+        .nav-links a:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .nav-links a.active {
+            background-color: #667eea;
+            color: white;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .controls {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .control-group {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .control-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .control-item label {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .control-item input, .control-item select {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            width: 120px;
+        }
+        
+        .analyze-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .card h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .summary-item {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+        
+        .summary-item.critical {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .summary-item.normal {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+        
+        .summary-item .number {
+            font-size: 20px;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .summary-item .label {
+            font-size: 11px;
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+        
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 13px;
+        }
+        
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+        
+        .status-badge {
+            padding: 3px 6px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-critical {
+            background: #ffcdd2;
+            color: #c62828;
+        }
+        
+        .status-normal {
+            background: #c8e6c9;
+            color: #2e7d32;
+        }
+        
+        .status-error {
+            background: #ffcdd2;
+            color: #c62828;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e0e0e0;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .tab.active {
+            border-bottom-color: #667eea;
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+        
+        .filter-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .filter-item label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+        }
+        
+        .filter-item input, .filter-item select {
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            width: 120px;
+        }
+        
+        .export-btn {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: auto;
+        }
+        
+        .export-btn:hover {
+            background: #45a049;
+        }
+        
+        .severity-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .severity-critical {
+            background: #f44336;
+        }
+        
+        .severity-high {
+            background: #ff9800;
+        }
+        
+        .severity-medium {
+            background: #ffeb3b;
+        }
+        
+        .severity-low {
+            background: #4caf50;
+        }
+        
+        .details-row {
+            background: #f8f9fa;
+            display: none;
+        }
+        
+        .details-content {
+            padding: 15px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .expandable-row {
+            cursor: pointer;
+        }
+        
+        .expandable-row:hover {
+            background: #f5f5f5;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+        
+        .analysis-metadata {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .metadata-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+        
+        .metadata-item {
+            text-align: center;
+        }
+        
+        .metadata-value {
+            font-weight: bold;
+            color: #1565c0;
+        }
+        
+        .metadata-label {
+            font-size: 12px;
+            color: #1976d2;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚡ AEP Dynamic Grid Challenge - N-1 Contingency Analysis</h1>
+        <p>Comprehensive transmission line outage analysis for Hawaii 40-Bus System</p>
+        <div class="nav-links">
+            <a href="/">Main Dashboard</a>
+            <a href="/map">Grid Map</a>
+            <a href="/n1" class="active">N-1 Analysis</a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="controls">
+            <div style="background: #e3f2fd; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 2px solid #2196f3;">
+                <h4 style="color: #1565c0; margin-bottom: 10px; text-align: center;">🌡️ N-1 Analysis Conditions</h4>
+                <p style="color: #1976d2; font-size: 14px; text-align: center; margin-bottom: 15px;">
+                    <strong>Test grid stability by removing transmission lines one at a time</strong>
+                </p>
+                <div class="control-group">
+                    <div class="control-item">
+                        <label for="temperature">🌡️ Temperature (°C)</label>
+                        <input type="number" id="temperature" value="35" min="20" max="70" style="border-color: #2196f3;">
+                    </div>
+                    <div class="control-item">
+                        <label for="windSpeed">💨 Wind Speed (ft/sec)</label>
+                        <input type="number" id="windSpeed" value="2.0" min="0.1" max="10" step="0.1" style="border-color: #2196f3;">
+                    </div>
+                    <div class="control-item">
+                        <label for="maxLines">📊 Lines to Test</label>
+                        <select id="maxLines" style="border-color: #2196f3;">
+                            <option value="10">First 10 Lines</option>
+                            <option value="20">First 20 Lines</option>
+                            <option value="30">First 30 Lines</option>
+                            <option value="">All Lines</option>
+                        </select>
+                    </div>
+                    <button class="analyze-btn" onclick="runN1Analysis()">⚡ Run N-1 Analysis</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>📊 N-1 Analysis Summary</h3>
+            <div id="summary" class="loading">
+                Click "Run N-1 Analysis" to start contingency testing...
+            </div>
+            <div id="progressContainer" style="display: none;">
+                <p style="margin-bottom: 10px;">Analysis Progress:</p>
+                <div class="progress-bar">
+                    <div id="progressBar" class="progress-fill" style="width: 0%;"></div>
+                </div>
+                <p id="progressText" style="text-align: center; margin-top: 5px;">Starting analysis...</p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('violations')">🚨 Violations</div>
+                <div class="tab" onclick="switchTab('contingencies')">⚡ Contingencies</div>
+                <div class="tab" onclick="switchTab('statistics')">📊 Statistics</div>
+                <div class="tab" onclick="switchTab('chart')">📈 Analysis Chart</div>
+            </div>
+            
+            <div id="violations" class="tab-content active">
+                <h3>🚨 Post-Contingency Violations</h3>
+                <div class="filter-controls">
+                    <div class="filter-item">
+                        <label>Min Loading (%)</label>
+                        <input type="number" id="minLoadingFilter" value="80" min="0" max="200" onchange="filterViolations()">
+                    </div>
+                    <div class="filter-item">
+                        <label>Severity</label>
+                        <select id="severityFilter" onchange="filterViolations()">
+                            <option value="">All Severities</option>
+                            <option value="critical">Critical (>120%)</option>
+                            <option value="high">High (100-120%)</option>
+                            <option value="medium">Medium (90-100%)</option>
+                            <option value="low">Low (80-90%)</option>
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <label>Conductor Type</label>
+                        <select id="conductorFilter" onchange="filterViolations()">
+                            <option value="">All Conductors</option>
+                        </select>
+                    </div>
+                    <button class="export-btn" onclick="exportViolations()">📊 Export CSV</button>
+                </div>
+                <div id="violationsTable" class="loading">
+                    Run analysis to see violations...
+                </div>
+            </div>
+            
+            <div id="contingencies" class="tab-content">
+                <h3>⚡ Contingency Results</h3>
+                <div class="filter-controls">
+                    <div class="filter-item">
+                        <label>Min Violations</label>
+                        <input type="number" id="minViolationsFilter" value="0" min="0" onchange="filterContingencies()">
+                    </div>
+                    <div class="filter-item">
+                        <label>Status</label>
+                        <select id="statusFilter" onchange="filterContingencies()">
+                            <option value="">All Status</option>
+                            <option value="CRITICAL">Critical Only</option>
+                            <option value="NORMAL">Normal Only</option>
+                        </select>
+                    </div>
+                    <button class="export-btn" onclick="exportContingencies()">📊 Export CSV</button>
+                </div>
+                <div id="contingenciesTable" class="loading">
+                    Run analysis to see contingency results...
+                </div>
+            </div>
+            
+            <div id="statistics" class="tab-content">
+                <h3>📊 Analysis Statistics</h3>
+                <div id="statisticsContent" class="loading">
+                    Run analysis to see detailed statistics...
+                </div>
+            </div>
+            
+            <div id="chart" class="tab-content">
+                <h3>📈 N-1 Analysis Visualization</h3>
+                <div class="chart-container">
+                    <canvas id="n1Chart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h4>🎯 About N-1 Contingency Analysis</h4>
+            <p style="line-height: 1.6; color: #666;">
+                N-1 contingency analysis tests grid reliability by simulating the outage of each transmission line 
+                and checking if the remaining system can handle the redistributed power flows without overloading. 
+                This analysis is critical for ensuring grid security and identifying vulnerable transmission corridors.
+            </p>
+            <ul style="margin: 15px 0; padding-left: 20px; color: #666;">
+                <li><strong>Contingency:</strong> The outaged transmission line</li>
+                <li><strong>Violation:</strong> A remaining line that exceeds 80% loading after the outage</li>
+                <li><strong>Critical Contingency:</strong> An outage that causes one or more violations</li>
+                <li><strong>System Security:</strong> Ability to withstand any single line outage</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let n1Chart = null;
+        let currentResults = null;
+        let filteredViolations = [];
+        let filteredContingencies = [];
+        
+        async function runN1Analysis() {
+            const temp = document.getElementById('temperature').value;
+            const wind = document.getElementById('windSpeed').value;
+            const maxLines = document.getElementById('maxLines').value;
+            
+            // Show loading states
+            document.getElementById('summary').innerHTML = '<div class="loading">🔍 Running N-1 contingency analysis...</div>';
+            document.getElementById('violationsTable').innerHTML = '<div class="loading">Analyzing contingencies...</div>';
+            document.getElementById('contingenciesTable').innerHTML = '<div class="loading">Processing results...</div>';
+            
+            // Show progress bar
+            document.getElementById('progressContainer').style.display = 'block';
+            simulateProgress();
+            
+            try {
+                let url = `/api/n1_analysis?temp=${temp}&wind=${wind}`;
+                if (maxLines) {
+                    url += `&max_lines=${maxLines}`;
+                }
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                currentResults = data;
+                
+                // Hide progress bar
+                document.getElementById('progressContainer').style.display = 'none';
+                
+                if (data.error) {
+                    document.getElementById('summary').innerHTML = `
+                        <div style="text-align: center; padding: 20px; color: #f44336;">
+                            <h4>❌ Analysis Error</h4>
+                            <p>${data.error}</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                displaySummary(data.summary, temp, wind);
+                displayViolations(data.violations);
+                displayContingencies(data.contingency_results);
+                displayStatistics(data);
+                updateChart(data);
+                populateFilterOptions(data);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('progressContainer').style.display = 'none';
+                document.getElementById('summary').innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #f44336;">
+                        <h4>❌ Analysis Failed</h4>
+                        <p>Unable to complete N-1 analysis</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function simulateProgress() {
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 95) progress = 95;
+                
+                document.getElementById('progressBar').style.width = progress + '%';
+                document.getElementById('progressText').textContent = `Analyzing contingencies... ${Math.round(progress)}%`;
+                
+                if (progress >= 95) {
+                    clearInterval(interval);
+                }
+            }, 500);
+        }
+        
+        function displaySummary(summary, temp, wind) {
+            const systemStatus = summary.critical_contingencies > 0 ? 'CRITICAL' : 'NORMAL';
+            const statusClass = systemStatus.toLowerCase();
+            
+            document.getElementById('summary').innerHTML = `
+                <div class="summary-grid">
+                    <div class="summary-item ${statusClass}">
+                        <span class="number">${systemStatus}</span>
+                        <span class="label">System Security</span>
+                    </div>
+                    <div class="summary-item critical">
+                        <span class="number">${summary.critical_contingencies}</span>
+                        <span class="label">Critical Contingencies</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="number">${summary.total_violations}</span>
+                        <span class="label">Total Violations</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="number">${summary.total_contingencies}</span>
+                        <span class="label">Contingencies Tested</span>
+                    </div>
+                </div>
+                <p style="text-align: center; margin-top: 15px; color: #666; font-size: 14px;">
+                    Analysis Conditions: ${temp}°C, ${wind} ft/sec wind
+                </p>
+            `;
+        }
+        
+        function getSeverity(loading) {
+            if (loading > 120) return 'critical';
+            if (loading > 100) return 'high';
+            if (loading > 90) return 'medium';
+            return 'low';
+        }
+        
+        function getSeverityColor(severity) {
+            const colors = {
+                'critical': '#f44336',
+                'high': '#ff9800',
+                'medium': '#ffeb3b',
+                'low': '#4caf50'
+            };
+            return colors[severity] || '#666';
+        }
+        
+        function displayViolations(violations) {
+            filteredViolations = violations;
+            
+            if (violations.length === 0) {
+                document.getElementById('violationsTable').innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #4caf50;">
+                        <h4>✅ No Violations Found</h4>
+                        <p>All contingencies passed - system is N-1 secure under these conditions</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            renderViolationsTable(violations);
+        }
+        
+        function renderViolationsTable(violations) {
+            const tableHtml = `
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Severity</th>
+                                <th>Contingency (Outaged Line)</th>
+                                <th>Overloaded Line</th>
+                                <th>Loading</th>
+                                <th>Flow (MW)</th>
+                                <th>Rating (MVA)</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${violations.slice(0, 100).map((violation, index) => {
+                                const severity = getSeverity(violation.loading_pct);
+                                const severityColor = getSeverityColor(severity);
+                                return `
+                                    <tr class="expandable-row" onclick="toggleViolationDetails(${index})" style="${violation.loading_pct > 100 ? 'background-color: #f5f5f5;' : ''}">
+                                        <td style="text-align: center; font-weight: bold; color: #666;">
+                                            #${index + 1}
+                                        </td>
+                                        <td>
+                                            <span class="severity-indicator severity-${severity}" style="background: ${severityColor};"></span>
+                                            ${severity.toUpperCase()}
+                                        </td>
+                                        <td title="${violation.contingency_name}">
+                                            ${violation.contingency_name.substring(0, 25)}${violation.contingency_name.length > 25 ? '...' : ''}
+                                        </td>
+                                        <td title="${violation.overloaded_line_name}">
+                                            ${violation.overloaded_line_name.substring(0, 25)}${violation.overloaded_line_name.length > 25 ? '...' : ''}
+                                        </td>
+                                        <td style="font-weight: bold; color: ${severityColor};">
+                                            ${violation.loading_pct.toFixed(1)}%
+                                        </td>
+                                        <td>${violation.flow.toFixed(1)}</td>
+                                        <td>${violation.rating.toFixed(1)}</td>
+                                        <td style="text-align: center;">
+                                            <span style="cursor: pointer; color: #667eea;">📋 Details</span>
+                                        </td>
+                                    </tr>
+                                    <tr id="details-${index}" class="details-row">
+                                        <td colspan="8">
+                                            <div class="details-content">
+                                                <strong>Detailed Information:</strong><br>
+                                                <strong>Contingency:</strong> ${violation.contingency_name}<br>
+                                                <strong>Overloaded Line:</strong> ${violation.overloaded_line_name}<br>
+                                                <strong>Loading:</strong> ${violation.loading_pct.toFixed(2)}% (${(violation.loading_pct - 100).toFixed(1)}% over limit)<br>
+                                                <strong>Power Flow:</strong> ${violation.flow.toFixed(2)} MW<br>
+                                                <strong>Line Rating:</strong> ${violation.rating.toFixed(2)} MVA<br>
+                                                <strong>Severity:</strong> ${severity.toUpperCase()} - ${getSeverityDescription(severity)}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                <p style="margin-top: 10px; color: #7f8c8d; font-size: 14px;">
+                    Showing ${Math.min(100, violations.length)} of ${violations.length} violations (sorted by loading %)
+                </p>
+            `;
+            
+            document.getElementById('violationsTable').innerHTML = tableHtml;
+        }
+        
+        function getSeverityDescription(severity) {
+            const descriptions = {
+                'critical': 'Immediate action required - severe overload',
+                'high': 'High priority - significant overload',
+                'medium': 'Medium priority - moderate overload',
+                'low': 'Low priority - minor overload'
+            };
+            return descriptions[severity] || '';
+        }
+        
+        function toggleViolationDetails(index) {
+            const detailsRow = document.getElementById(`details-${index}`);
+            if (detailsRow.style.display === 'table-row') {
+                detailsRow.style.display = 'none';
+            } else {
+                detailsRow.style.display = 'table-row';
+            }
+        }
+        
+        function displayContingencies(contingencies) {
+            filteredContingencies = contingencies;
+            renderContingenciesTable(contingencies);
+        }
+        
+        function renderContingenciesTable(contingencies) {
+            const tableHtml = `
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Contingency Line</th>
+                                <th>Violations</th>
+                                <th>Max Loading</th>
+                                <th>Status</th>
+                                <th>Risk Level</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${contingencies.slice(0, 100).map((cont, index) => {
+                                const riskLevel = getRiskLevel(cont.violation_count, cont.max_loading);
+                                const riskColor = getRiskColor(riskLevel);
+                                return `
+                                    <tr class="expandable-row" onclick="toggleContingencyDetails(${index})">
+                                        <td style="text-align: center; font-weight: bold; color: #666;">
+                                            #${index + 1}
+                                        </td>
+                                        <td title="${cont.contingency_name}">
+                                            ${cont.contingency_name.substring(0, 35)}${cont.contingency_name.length > 35 ? '...' : ''}
+                                        </td>
+                                        <td style="text-align: center; font-weight: bold; color: ${cont.violation_count > 0 ? '#f44336' : '#4caf50'};">
+                                            ${cont.violation_count}
+                                        </td>
+                                        <td style="font-weight: bold; color: ${cont.max_loading > 100 ? '#f44336' : '#666'};">
+                                            ${cont.max_loading.toFixed(1)}%
+                                        </td>
+                                        <td><span class="status-badge status-${cont.status.toLowerCase()}">${cont.status}</span></td>
+                                        <td>
+                                            <span class="severity-indicator" style="background: ${riskColor};"></span>
+                                            ${riskLevel.toUpperCase()}
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <span style="cursor: pointer; color: #667eea;">📋 Details</span>
+                                        </td>
+                                    </tr>
+                                    <tr id="cont-details-${index}" class="details-row">
+                                        <td colspan="7">
+                                            <div class="details-content">
+                                                <strong>Contingency Analysis:</strong><br>
+                                                <strong>Outaged Line:</strong> ${cont.contingency_name}<br>
+                                                <strong>Violations Count:</strong> ${cont.violation_count}<br>
+                                                <strong>Maximum Loading:</strong> ${cont.max_loading.toFixed(2)}%<br>
+                                                <strong>Status:</strong> ${cont.status}<br>
+                                                <strong>Risk Assessment:</strong> ${riskLevel.toUpperCase()} - ${getRiskDescription(riskLevel)}<br>
+                                                ${cont.error ? `<strong>Error:</strong> ${cont.error}<br>` : ''}
+                                                <strong>Impact:</strong> ${getImpactDescription(cont.violation_count, cont.max_loading)}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                <p style="margin-top: 10px; color: #7f8c8d; font-size: 14px;">
+                    Showing ${Math.min(100, contingencies.length)} of ${contingencies.length} contingencies (sorted by violation count)
+                </p>
+            `;
+            
+            document.getElementById('contingenciesTable').innerHTML = tableHtml;
+        }
+        
+        function getRiskLevel(violationCount, maxLoading) {
+            if (violationCount >= 5 || maxLoading > 150) return 'critical';
+            if (violationCount >= 3 || maxLoading > 120) return 'high';
+            if (violationCount >= 1 || maxLoading > 100) return 'medium';
+            return 'low';
+        }
+        
+        function getRiskColor(riskLevel) {
+            const colors = {
+                'critical': '#f44336',
+                'high': '#ff9800',
+                'medium': '#ffeb3b',
+                'low': '#4caf50'
+            };
+            return colors[riskLevel] || '#666';
+        }
+        
+        function getRiskDescription(riskLevel) {
+            const descriptions = {
+                'critical': 'High system impact - multiple severe violations',
+                'high': 'Significant impact - multiple violations',
+                'medium': 'Moderate impact - some violations',
+                'low': 'Low impact - minimal or no violations'
+            };
+            return descriptions[riskLevel] || '';
+        }
+        
+        function getImpactDescription(violationCount, maxLoading) {
+            if (violationCount === 0) return 'No system impact - contingency is secure';
+            if (violationCount === 1) return 'Single line overload - localized impact';
+            if (violationCount <= 3) return 'Multiple line overloads - regional impact';
+            return 'Widespread overloads - system-wide impact';
+        }
+        
+        function toggleContingencyDetails(index) {
+            const detailsRow = document.getElementById(`cont-details-${index}`);
+            if (detailsRow.style.display === 'table-row') {
+                detailsRow.style.display = 'none';
+            } else {
+                detailsRow.style.display = 'table-row';
+            }
+        }
+        
+        function updateChart(data) {
+            const ctx = document.getElementById('n1Chart').getContext('2d');
+            
+            if (n1Chart) {
+                n1Chart.destroy();
+            }
+            
+            // Prepare data for chart
+            const contingencies = data.contingency_results.slice(0, 20); // Top 20
+            const labels = contingencies.map(c => c.contingency_name.substring(0, 15) + '...');
+            const violationCounts = contingencies.map(c => c.violation_count);
+            const maxLoadings = contingencies.map(c => c.max_loading);
+            
+            n1Chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Violation Count',
+                            data: violationCounts,
+                            backgroundColor: violationCounts.map(v => v > 0 ? '#f44336' : '#4caf50'),
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Max Loading (%)',
+                            data: maxLoadings,
+                            type: 'line',
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Contingency (Outaged Line)'
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Number of Violations'
+                            },
+                            beginAtZero: true
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Max Loading (%)'
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'N-1 Contingency Analysis Results'
+                        }
+                    }
+                }
+            });
+        }
+        
+        function populateFilterOptions(data) {
+            // Populate conductor filter
+            const conductors = [...new Set(data.violations.map(v => v.conductor || 'Unknown'))];
+            const conductorSelect = document.getElementById('conductorFilter');
+            conductorSelect.innerHTML = '<option value="">All Conductors</option>';
+            conductors.forEach(conductor => {
+                conductorSelect.innerHTML += `<option value="${conductor}">${conductor}</option>`;
+            });
+        }
+        
+        function filterViolations() {
+            const minLoading = parseFloat(document.getElementById('minLoadingFilter').value) || 0;
+            const severity = document.getElementById('severityFilter').value;
+            const conductor = document.getElementById('conductorFilter').value;
+            
+            let filtered = currentResults.violations.filter(violation => {
+                if (violation.loading_pct < minLoading) return false;
+                if (severity && getSeverity(violation.loading_pct) !== severity) return false;
+                if (conductor && (violation.conductor || 'Unknown') !== conductor) return false;
+                return true;
+            });
+            
+            renderViolationsTable(filtered);
+        }
+        
+        function filterContingencies() {
+            const minViolations = parseInt(document.getElementById('minViolationsFilter').value) || 0;
+            const status = document.getElementById('statusFilter').value;
+            
+            let filtered = currentResults.contingency_results.filter(cont => {
+                if (cont.violation_count < minViolations) return false;
+                if (status && cont.status !== status) return false;
+                return true;
+            });
+            
+            renderContingenciesTable(filtered);
+        }
+        
+        function displayStatistics(data) {
+            const violations = data.violations;
+            const contingencies = data.contingency_results;
+            
+            // Calculate statistics
+            const severityStats = {
+                critical: violations.filter(v => getSeverity(v.loading_pct) === 'critical').length,
+                high: violations.filter(v => getSeverity(v.loading_pct) === 'high').length,
+                medium: violations.filter(v => getSeverity(v.loading_pct) === 'medium').length,
+                low: violations.filter(v => getSeverity(v.loading_pct) === 'low').length
+            };
+            
+            const riskStats = {
+                critical: contingencies.filter(c => getRiskLevel(c.violation_count, c.max_loading) === 'critical').length,
+                high: contingencies.filter(c => getRiskLevel(c.violation_count, c.max_loading) === 'high').length,
+                medium: contingencies.filter(c => getRiskLevel(c.violation_count, c.max_loading) === 'medium').length,
+                low: contingencies.filter(c => getRiskLevel(c.violation_count, c.max_loading) === 'low').length
+            };
+            
+            const avgLoading = violations.length > 0 ? violations.reduce((sum, v) => sum + v.loading_pct, 0) / violations.length : 0;
+            const maxLoading = violations.length > 0 ? Math.max(...violations.map(v => v.loading_pct)) : 0;
+            const avgViolationsPerContingency = contingencies.length > 0 ? contingencies.reduce((sum, c) => sum + c.violation_count, 0) / contingencies.length : 0;
+            
+            const statisticsHtml = `
+                <div class="analysis-metadata">
+                    <h4 style="margin-bottom: 15px; text-align: center;">📊 Analysis Metadata</h4>
+                    <div class="metadata-grid">
+                        <div class="metadata-item">
+                            <div class="metadata-value">${data.summary.temperature}°C</div>
+                            <div class="metadata-label">Temperature</div>
+                        </div>
+                        <div class="metadata-item">
+                            <div class="metadata-value">${data.summary.wind_speed} ft/s</div>
+                            <div class="metadata-label">Wind Speed</div>
+                        </div>
+                        <div class="metadata-item">
+                            <div class="metadata-value">${data.summary.total_contingencies}</div>
+                            <div class="metadata-label">Lines Tested</div>
+                        </div>
+                        <div class="metadata-item">
+                            <div class="metadata-value">${new Date().toLocaleTimeString()}</div>
+                            <div class="metadata-label">Analysis Time</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">${avgLoading.toFixed(1)}%</div>
+                        <div class="stat-label">Average Violation Loading</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${maxLoading.toFixed(1)}%</div>
+                        <div class="stat-label">Maximum Loading</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${avgViolationsPerContingency.toFixed(1)}</div>
+                        <div class="stat-label">Avg Violations per Contingency</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${((data.summary.critical_contingencies / data.summary.total_contingencies) * 100).toFixed(1)}%</div>
+                        <div class="stat-label">Critical Contingency Rate</div>
+                    </div>
+                </div>
+                
+                <h4>🚨 Violation Severity Distribution</h4>
+                <div class="stats-grid">
+                    <div class="stat-card" style="border-left: 4px solid #f44336;">
+                        <div class="stat-value">${severityStats.critical}</div>
+                        <div class="stat-label">Critical (>120%)</div>
+                    </div>
+                    <div class="stat-card" style="border-left: 4px solid #ff9800;">
+                        <div class="stat-value">${severityStats.high}</div>
+                        <div class="stat-label">High (100-120%)</div>
+                    </div>
+                    <div class="stat-card" style="border-left: 4px solid #ffeb3b;">
+                        <div class="stat-value">${severityStats.medium}</div>
+                        <div class="stat-label">Medium (90-100%)</div>
+                    </div>
+                    <div class="stat-card" style="border-left: 4px solid #4caf50;">
+                        <div class="stat-value">${severityStats.low}</div>
+                        <div class="stat-label">Low (80-90%)</div>
+                    </div>
+                </div>
+                
+                <h4>⚡ Contingency Risk Distribution</h4>
+                <div class="stats-grid">
+                    <div class="stat-card" style="border-left: 4px solid #f44336;">
+                        <div class="stat-value">${riskStats.critical}</div>
+                        <div class="stat-label">Critical Risk</div>
+                    </div>
+                    <div class="stat-card" style="border-left: 4px solid #ff9800;">
+                        <div class="stat-value">${riskStats.high}</div>
+                        <div class="stat-label">High Risk</div>
+                    </div>
+                    <div class="stat-card" style="border-left: 4px solid #ffeb3b;">
+                        <div class="stat-value">${riskStats.medium}</div>
+                        <div class="stat-label">Medium Risk</div>
+                    </div>
+                    <div class="stat-card" style="border-left: 4px solid #4caf50;">
+                        <div class="stat-value">${riskStats.low}</div>
+                        <div class="stat-label">Low Risk</div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('statisticsContent').innerHTML = statisticsHtml;
+        }
+        
+        function exportViolations() {
+            if (!currentResults || !currentResults.violations.length) {
+                alert('No violation data to export');
+                return;
+            }
+            
+            const headers = ['Rank', 'Severity', 'Contingency', 'Overloaded Line', 'Loading %', 'Flow MW', 'Rating MVA'];
+            const csvContent = [
+                headers.join(','),
+                ...currentResults.violations.map((v, i) => [
+                    i + 1,
+                    getSeverity(v.loading_pct),
+                    `"${v.contingency_name}"`,
+                    `"${v.overloaded_line_name}"`,
+                    v.loading_pct.toFixed(2),
+                    v.flow.toFixed(2),
+                    v.rating.toFixed(2)
+                ].join(','))
+            ].join('\n');
+            
+            downloadCSV(csvContent, 'n1_violations.csv');
+        }
+        
+        function exportContingencies() {
+            if (!currentResults || !currentResults.contingency_results.length) {
+                alert('No contingency data to export');
+                return;
+            }
+            
+            const headers = ['Rank', 'Contingency Line', 'Violations', 'Max Loading %', 'Status', 'Risk Level'];
+            const csvContent = [
+                headers.join(','),
+                ...currentResults.contingency_results.map((c, i) => [
+                    i + 1,
+                    `"${c.contingency_name}"`,
+                    c.violation_count,
+                    c.max_loading.toFixed(2),
+                    c.status,
+                    getRiskLevel(c.violation_count, c.max_loading)
+                ].join(','))
+            ].join('\n');
+            
+            downloadCSV(csvContent, 'n1_contingencies.csv');
+        }
+        
+        function downloadCSV(content, filename) {
+            const blob = new Blob([content], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+        
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>
