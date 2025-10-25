@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AEP Dynamic Grid Challenge - Enhanced Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .controls {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .control-group {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .control-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .control-item label {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .control-item input {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            width: 120px;
+        }
+        
+        .analyze-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .map-section {
+            grid-column: 1 / -1;
+            margin-bottom: 20px;
+        }
+        
+        .charts-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        #map {
+            height: 500px;
+            border-radius: 10px;
+        }
+        
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .card h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        
+        .summary-item {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+        
+        .summary-item.critical {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .summary-item.caution {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+        
+        .summary-item.normal {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+        
+        .summary-item .number {
+            font-size: 20px;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .summary-item .label {
+            font-size: 11px;
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 250px;
+        }
+        
+        .lines-table {
+            grid-column: 1 / -1;
+        }
+        
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            overflow-x: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+        
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 13px;
+        }
+        
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            white-space: nowrap;
+        }
+        
+        td {
+            vertical-align: middle;
+        }
+        
+        .status-badge {
+            padding: 3px 6px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-critical {
+            background: #ffcdd2;
+            color: #c62828;
+        }
+        
+        .status-caution {
+            background: #ffe0b2;
+            color: #ef6c00;
+        }
+        
+        .status-normal {
+            background: #c8e6c9;
+            color: #2e7d32;
+        }
+        
+        .status-overloaded {
+            background: #e0e0e0;
+            color: #424242;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+        }
+        
+        .key-findings {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .key-findings h4 {
+            color: #1565c0;
+            margin-bottom: 10px;
+        }
+        
+        .key-findings ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        
+        .key-findings li {
+            padding: 5px 0;
+            border-left: 3px solid #2196f3;
+            padding-left: 10px;
+            margin-bottom: 5px;
+        }
+        
+        .overload-result {
+            background: #fff3e0;
+            border: 2px solid #ff9800;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        
+        .overload-result.critical {
+            background: #ffebee;
+            border-color: #f44336;
+        }
+        
+        .overload-temp {
+            font-size: 24px;
+            font-weight: bold;
+            color: #d32f2f;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .line-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .detail-item {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .detail-item .value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .detail-item .label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔌 AEP Dynamic Grid Challenge - Enhanced Dashboard</h1>
+        <p>Real-time Hawaii 40-Bus System Analysis with IEEE 738 Dynamic Ratings</p>
+    </div>
+    
+    <div class="container">
+        <div class="controls">
+            <div style="background: #e3f2fd; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 2px solid #2196f3;">
+                <h4 style="color: #1565c0; margin-bottom: 10px; text-align: center;">🌡️ Global Weather Conditions</h4>
+                <p style="color: #1976d2; font-size: 14px; text-align: center; margin-bottom: 15px;">
+                    <strong>These values affect ALL analysis, charts, maps, and tables below</strong>
+                </p>
+                <div class="control-group">
+                    <div class="control-item">
+                        <label for="temperature">🌡️ Ambient Temperature (°C)</label>
+                        <input type="number" id="temperature" value="35" min="20" max="70" style="border-color: #2196f3;">
+                    </div>
+                    <div class="control-item">
+                        <label for="windSpeed">💨 Wind Speed (ft/sec)</label>
+                        <input type="number" id="windSpeed" value="2.0" min="0.1" max="10" step="0.1" style="border-color: #2196f3;">
+                    </div>
+                    <button class="analyze-btn" onclick="analyzeCurrentConditions()">🔍 Analyze Current Conditions</button>
+                    <button class="analyze-btn" onclick="findFirstOverload()">🌡️ Find First Overload</button>
+                </div>
+            </div>
+            
+            <div class="card" id="analysisSection" style="margin-top: 20px;">
+                <h3>📊 Current Conditions Analysis</h3>
+                <div id="analysisResults" class="loading">
+                    Click "Analyze Current Conditions" to see detailed analysis...
+                </div>
+            </div>
+        </div>
+        
+        <div class="map-section">
+            <div class="card">
+                <h3>🗺️ Interactive Hawaii Grid Map</h3>
+                <div id="map"></div>
+                <p style="margin-top: 10px; color: #666; font-size: 14px;">
+                    Lines are color-coded: <span style="color: #4caf50;">Green (Normal)</span>, 
+                    <span style="color: #ff9800;">Orange (Caution)</span>, 
+                    <span style="color: #f44336;">Red (Critical)</span>,
+                    <span style="color: #000000;">Black (Overloaded >100%)</span>
+                </p>
+            </div>
+        </div>
+        
+
+        
+        <div class="card">
+            <h3>📈 Temperature vs System Stress</h3>
+            <div class="chart-container">
+                <canvas id="tempChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="card lines-table">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0;">⚡ Critical Lines Analysis</h3>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <label for="lineCount" style="font-size: 14px; color: #666;">Show:</label>
+                    <select id="lineCount" onchange="updateLinesDisplay()" style="padding: 5px; border: 1px solid #e0e0e0; border-radius: 5px;">
+                        <option value="10">Top 10</option>
+                        <option value="25" selected>Top 25</option>
+                        <option value="50">Top 50</option>
+                        <option value="100">Top 100</option>
+                        <option value="all">All Lines</option>
+                    </select>
+                    <span style="font-size: 14px; color: #666;">lines</span>
+                </div>
+            </div>
+            <div id="linesTable" class="loading">
+                Waiting for analysis...
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="key-findings">
+                <h4>🎯 Interactive Features</h4>
+                <ul>
+                    <li><strong>🗺️ Live Map:</strong> Click transmission lines to see real-time loading data</li>
+                    <li><strong>🌡️ Temperature Control:</strong> Adjust temperature to see system stress changes</li>
+                    <li><strong>💨 Wind Impact:</strong> Modify wind speed to see cooling effects</li>
+                    <li><strong>📊 Real-time Analysis:</strong> All data updates automatically using IEEE 738 standards</li>
+                    <li><strong>🔍 Challenge Solution:</strong> Based on official AEP Dynamic Grid Challenge methodology</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let tempChart = null;
+        let map = null;
+        let gridLayer = null;
+        let currentLinesData = [];
+        
+        async function analyzeGrid() {
+            const temp = document.getElementById('temperature').value;
+            const wind = document.getElementById('windSpeed').value;
+            
+            document.getElementById('linesTable').innerHTML = '<div class="loading">Calculating...</div>';
+            
+            try {
+                const response = await fetch(`/api/analyze?temp=${temp}&wind=${wind}`);
+                const data = await response.json();
+                
+                displayLinesTable(data.lines);
+                
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        // Analyze current conditions from input boxes
+        async function analyzeCurrentConditions() {
+            const temp = document.getElementById('temperature').value;
+            const wind = document.getElementById('windSpeed').value;
+            
+            // Show loading state
+            document.getElementById('analysisResults').innerHTML = '<div class="loading">🔍 Analyzing current conditions...</div>';
+            
+            try {
+                // Run all analyses
+                await analyzeGrid();
+                await updateMap();
+                await showTemperatureSweep();
+                
+                // Get detailed analysis for current conditions
+                const response = await fetch(`/api/analyze?temp=${temp}&wind=${wind}`);
+                const data = await response.json();
+                
+                // Display detailed analysis
+                displayCurrentAnalysis(data, temp, wind);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('analysisResults').innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #f44336;">
+                        <h4>❌ Analysis Error</h4>
+                        <p>Unable to complete analysis</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Display detailed analysis for current conditions
+        function displayCurrentAnalysis(data, temp, wind) {
+            const overloadedLines = data.lines.filter(line => line.loading > 100);
+            const criticalLines = data.lines.filter(line => line.loading >= 90 && line.loading <= 100);
+            const mostLoadedLine = data.lines[0]; // Already sorted by loading
+            
+            const systemStatus = overloadedLines.length > 0 ? 'OVERLOADED' :
+                               data.summary.critical > 0 ? 'CRITICAL' : 
+                               data.summary.caution > 5 ? 'CAUTION' : 'NORMAL';
+            
+            const statusColor = overloadedLines.length > 0 ? '#000000' :
+                              systemStatus === 'CRITICAL' ? '#f44336' :
+                              systemStatus === 'CAUTION' ? '#ff9800' : '#4caf50';
+            
+            const html = `
+                <div class="overload-result">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <h4 style="color: ${statusColor}; font-size: 20px; margin-bottom: 10px;">
+                            System Status: ${systemStatus}
+                        </h4>
+                        <p style="color: #666; font-size: 14px;">
+                            Conditions: ${temp}°C, ${wind} ft/sec wind
+                        </p>
+                    </div>
+                    
+                    <div class="line-details">
+                        <div class="detail-item">
+                            <div class="value" style="color: ${overloadedLines.length > 0 ? '#000' : '#4caf50'};">
+                                ${overloadedLines.length}
+                            </div>
+                            <div class="label">Overloaded Lines</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="value" style="color: #f44336;">
+                                ${data.summary.critical}
+                            </div>
+                            <div class="label">Critical Lines</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="value" style="color: #ff9800;">
+                                ${data.summary.caution}
+                            </div>
+                            <div class="label">Caution Lines</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="value" style="color: #4caf50;">
+                                ${data.summary.normal}
+                            </div>
+                            <div class="label">Normal Lines</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="value" style="color: #2c3e50;">
+                                ${data.summary.max_loading.toFixed(1)}%
+                            </div>
+                            <div class="label">Max Loading</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="value" style="color: #2c3e50;">
+                                ${data.summary.avg_loading.toFixed(1)}%
+                            </div>
+                            <div class="label">Avg Loading</div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <h4 style="color: #2c3e50; margin-bottom: 10px;">📍 Most Loaded Line:</h4>
+                        <p style="font-weight: bold; margin-bottom: 10px;">${mostLoadedLine.branch_name}</p>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                            <div style="text-align: center; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                                <div style="font-weight: bold; color: ${mostLoadedLine.loading > 100 ? '#000' : mostLoadedLine.loading >= 90 ? '#f44336' : '#2c3e50'};">
+                                    ${mostLoadedLine.loading.toFixed(1)}%
+                                </div>
+                                <div style="font-size: 12px; color: #666;">Loading</div>
+                            </div>
+                            <div style="text-align: center; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                                <div style="font-weight: bold; color: #2c3e50;">${mostLoadedLine.flow.toFixed(1)} MW</div>
+                                <div style="font-size: 12px; color: #666;">Flow</div>
+                            </div>
+                            <div style="text-align: center; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                                <div style="font-weight: bold; color: #2c3e50;">${mostLoadedLine.rating.toFixed(1)} MVA</div>
+                                <div style="font-size: 12px; color: #666;">Rating</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${overloadedLines.length > 0 ? `
+                        <div style="margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.1); border-radius: 5px; font-size: 13px;">
+                            <strong>⚠️ Warning:</strong> ${overloadedLines.length} line${overloadedLines.length > 1 ? 's are' : ' is'} overloaded (>100%). 
+                            Consider reducing load or upgrading conductors.
+                        </div>
+                    ` : data.summary.critical > 0 ? `
+                        <div style="margin-top: 15px; padding: 10px; background: rgba(244,67,54,0.1); border-radius: 5px; font-size: 13px;">
+                            <strong>⚠️ Caution:</strong> ${data.summary.critical} line${data.summary.critical > 1 ? 's are' : ' is'} in critical range (90-100%). 
+                            Monitor closely as temperature increases.
+                        </div>
+                    ` : `
+                        <div style="margin-top: 15px; padding: 10px; background: rgba(76,175,80,0.1); border-radius: 5px; font-size: 13px;">
+                            <strong>✅ Status:</strong> All lines are operating within safe limits under these conditions.
+                        </div>
+                    `}
+                </div>
+            `;
+            
+            document.getElementById('analysisResults').innerHTML = html;
+        }
+        
+        // Test specific scenarios
+        async function testScenario(temp, wind) {
+            document.getElementById('temperature').value = temp;
+            document.getElementById('windSpeed').value = wind;
+            
+            await analyzeGrid();
+            await updateMap();
+            await showTemperatureSweep();
+        }
+        
+
+        
+        function displayLinesTable(lines) {
+            // Store current lines data for custom display updates
+            currentLinesData = lines;
+            updateLinesDisplay();
+        }
+        
+        function updateLinesDisplay() {
+            if (currentLinesData.length === 0) return;
+            
+            const temp = document.getElementById('temperature').value;
+            const wind = document.getElementById('windSpeed').value;
+            const lineCount = document.getElementById('lineCount').value;
+            const linesToShow = lineCount === 'all' ? currentLinesData : currentLinesData.slice(0, parseInt(lineCount));
+            
+            // Update table title
+            document.querySelector('.lines-table h3').innerHTML = `⚡ Critical Lines Analysis (${temp}°C, ${wind} ft/s)`;
+            
+            const tableHtml = `
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">Rank</th>
+                                <th style="width: 80px;">Line ID</th>
+                                <th style="width: 200px;">Line Name</th>
+                                <th style="width: 100px;">Conductor</th>
+                                <th style="width: 60px;">kV</th>
+                                <th style="width: 80px;">Flow (MW)</th>
+                                <th style="width: 90px;">Rating (MVA)</th>
+                                <th style="width: 80px;">Loading</th>
+                                <th style="width: 80px;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${linesToShow.map((line, index) => `
+                                <tr style="${line.loading > 100 ? 'background-color: #f5f5f5;' : line.loading >= 90 ? 'background-color: #ffebee;' : ''}">
+                                    <td style="text-align: center; font-weight: bold; color: ${line.loading > 100 ? '#424242' : '#666'};">
+                                        #${index + 1}
+                                    </td>
+                                    <td style="font-family: monospace; font-size: 12px; color: ${line.loading > 100 ? '#424242' : 'inherit'};">
+                                        ${line.name}
+                                    </td>
+                                    <td title="${line.branch_name}" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: ${line.loading > 100 ? '#424242' : 'inherit'};">
+                                        ${line.branch_name}
+                                    </td>
+                                    <td style="color: ${line.loading > 100 ? '#424242' : 'inherit'};">${line.conductor.split(' ')[0]}</td>
+                                    <td style="color: ${line.loading > 100 ? '#424242' : 'inherit'};">${line.voltage}</td>
+                                    <td style="color: ${line.loading > 100 ? '#424242' : 'inherit'};">${line.flow.toFixed(1)}</td>
+                                    <td style="color: ${line.loading > 100 ? '#424242' : 'inherit'};">${line.rating.toFixed(1)}</td>
+                                    <td style="font-weight: ${line.loading > 100 ? 'bold' : 'normal'}; color: ${line.loading > 100 ? '#212121' : line.loading >= 90 ? '#f44336' : '#333'};">
+                                        ${line.loading.toFixed(1)}%
+                                    </td>
+                                    <td><span class="status-badge ${line.loading > 100 ? 'status-overloaded' : 'status-' + line.status}">${line.loading > 100 ? 'OVERLOADED' : line.status}</span></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <p style="color: #7f8c8d; font-size: 14px;">
+                        Showing ${linesToShow.length} of ${currentLinesData.length} lines (sorted by loading %) at ${temp}°C, ${wind} ft/s
+                    </p>
+                    <div style="font-size: 12px; color: #666;">
+                        <span style="background: #f5f5f5; color: #424242; padding: 2px 6px; border-radius: 3px; margin-right: 5px; border: 1px solid #e0e0e0;">Overloaded (>100%)</span>
+                        <span style="background: #ffebee; padding: 2px 6px; border-radius: 3px;">Critical (90-100%)</span>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('linesTable').innerHTML = tableHtml;
+        }
+        
+        async function showTemperatureSweep() {
+            const wind = document.getElementById('windSpeed').value;
+            
+            try {
+                const response = await fetch(`/api/temperature_sweep?wind=${wind}`);
+                const data = await response.json();
+                
+                updateTemperatureChart(data);
+                
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        function updateTemperatureChart(data) {
+            const ctx = document.getElementById('tempChart').getContext('2d');
+            const wind = document.getElementById('windSpeed').value;
+            
+            // Update chart title
+            document.querySelector('.card:has(#tempChart) h3').innerHTML = `📈 Temperature vs System Stress (Wind: ${wind} ft/s)`;
+            
+            if (tempChart) {
+                tempChart.destroy();
+            }
+            
+            tempChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.temperature + '°C'),
+                    datasets: [
+                        {
+                            label: 'Overloaded Lines (>100%)',
+                            data: data.map(d => d.overloaded_lines || 0),
+                            borderColor: '#000000',
+                            backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            borderWidth: 3
+                        },
+                        {
+                            label: 'Critical Lines (90-100%)',
+                            data: data.map(d => d.critical),
+                            borderColor: '#e53e3e',
+                            backgroundColor: 'rgba(229, 62, 62, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Caution Lines (60-90%)',
+                            data: data.map(d => d.caution),
+                            borderColor: '#ff8c00',
+                            backgroundColor: 'rgba(255, 140, 0, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Normal Lines (<60%)',
+                            data: data.map(d => d.normal),
+                            borderColor: '#4caf50',
+                            backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Lines'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Temperature (°C)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `When Do Lines Start to Overload? (Wind: ${wind} ft/s)`
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Initialize map
+        function initMap() {
+            // Center on Hawaii
+            map = L.map('map').setView([21.3, -157.8], 9);
+            
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            
+            updateMap();
+        }
+        
+        // Update map with current conditions
+        async function updateMap() {
+            const temp = document.getElementById('temperature').value;
+            const wind = document.getElementById('windSpeed').value;
+            
+            // Update map title
+            document.querySelector('.map-section .card h3').innerHTML = `🗺️ Interactive Hawaii Grid Map (${temp}°C, ${wind} ft/s)`;
+            
+            try {
+                const response = await fetch(`/api/gis_data?temp=${temp}&wind=${wind}`);
+                const gisData = await response.json();
+                
+                if (gisData && gisData.features) {
+                    // Remove existing layer
+                    if (gridLayer) {
+                        map.removeLayer(gridLayer);
+                    }
+                    
+                    // Add new layer with loading data
+                    gridLayer = L.geoJSON(gisData, {
+                        style: function(feature) {
+                            const loading = feature.properties.loading || 0;
+                            const status = feature.properties.status || 'normal';
+                            
+                            let color = '#4caf50'; // Green for normal
+                            if (loading > 100) color = '#000000'; // Black for overloaded
+                            else if (status === 'critical') color = '#f44336'; // Red
+                            else if (status === 'caution') color = '#ff9800'; // Orange
+                            
+                            return {
+                                color: color,
+                                weight: Math.max(3, Math.min(10, loading / 15)),
+                                opacity: loading > 100 ? 1.0 : 0.8
+                            };
+                        },
+                        onEachFeature: function(feature, layer) {
+                            const props = feature.properties;
+                            const loading = props.loading || 0;
+                            const status = loading > 100 ? 'OVERLOADED' : (props.status || 'normal').toUpperCase();
+                            const statusColor = loading > 100 ? '#000000' : 
+                                              status === 'CRITICAL' ? '#f44336' : 
+                                              status === 'CAUTION' ? '#ff9800' : '#4caf50';
+                            
+                            const popupContent = `
+                                <div style="min-width: 200px;">
+                                    <h4 style="margin-bottom: 10px; color: #333;">${props.Name || 'Unknown Line'}</h4>
+                                    <table style="width: 100%; font-size: 13px;">
+                                        <tr><td><strong>Line ID:</strong></td><td>${props.Name || 'N/A'}</td></tr>
+                                        <tr><td><strong>Loading:</strong></td><td style="color: ${statusColor}; font-weight: bold;">${loading.toFixed(1)}%</td></tr>
+                                        <tr><td><strong>Status:</strong></td><td style="color: ${statusColor}; font-weight: bold;">${status}</td></tr>
+                                        <tr><td><strong>Flow:</strong></td><td>${(props.flow || 0).toFixed(1)} MW</td></tr>
+                                        <tr><td><strong>Rating:</strong></td><td>${(props.rating || 0).toFixed(1)} MVA</td></tr>
+                                        <tr><td><strong>Conductor:</strong></td><td>${props.conductor || 'Unknown'}</td></tr>
+                                    </table>
+                                </div>
+                            `;
+                            layer.bindPopup(popupContent);
+                        }
+                    }).addTo(map);
+                }
+            } catch (error) {
+                console.error('Error updating map:', error);
+            }
+        }
+        
+
+        
+        // Find first overload analysis
+        async function findFirstOverload() {
+            const wind = document.getElementById('windSpeed').value;
+            
+            // Show loading state in analysis section
+            document.getElementById('analysisResults').innerHTML = '<div class="loading">🔍 Analyzing temperature range to find first overload...</div>';
+            
+            try {
+                const response = await fetch(`/api/find_first_overload?wind=${wind}`);
+                const data = await response.json();
+                
+                if (data.critical_temperature) {
+                    const line = data.first_overload_line;
+                    const resultClass = line.loading > 110 ? 'critical' : '';
+                    
+                    const html = `
+                        <div class="overload-result ${resultClass}">
+                            <div class="overload-temp">
+                                🌡️ First Overload at ${data.critical_temperature}°C
+                            </div>
+                            <p style="text-align: center; margin-bottom: 15px; color: #666;">
+                                Wind Speed: ${data.wind_speed} ft/sec | Total Overloaded Lines: ${data.total_overloaded}
+                            </p>
+                            
+                            <h4 style="color: #d32f2f; margin-bottom: 10px;">📍 Most Critical Line:</h4>
+                            <p style="font-weight: bold; margin-bottom: 10px;">${line.branch_name}</p>
+                            
+                            <div class="line-details">
+                                <div class="detail-item">
+                                    <div class="value">${line.name}</div>
+                                    <div class="label">Line ID</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="value" style="color: #d32f2f;">${line.loading.toFixed(1)}%</div>
+                                    <div class="label">Loading</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="value">${line.flow.toFixed(1)} MW</div>
+                                    <div class="label">Power Flow</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="value">${line.rating.toFixed(1)} MVA</div>
+                                    <div class="label">Dynamic Rating</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="value">${line.voltage} kV</div>
+                                    <div class="label">Voltage Level</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="value">${line.conductor.split(' ')[0]}</div>
+                                    <div class="label">Conductor Type</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="value">${line.bus0} → ${line.bus1}</div>
+                                    <div class="label">Connection</div>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.7); border-radius: 5px; font-size: 13px;">
+                                <strong>💡 Answer:</strong> Lines start to overload at ${data.critical_temperature}°C. 
+                                Line ${line.name} (${line.branch_name}) reaches ${line.loading.toFixed(1)}% loading, 
+                                exceeding the 100% thermal limit.
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('analysisResults').innerHTML = html;
+                    
+                    // Update temperature input to show critical temperature
+                    document.getElementById('temperature').value = data.critical_temperature;
+                    
+                    // Trigger analysis at critical temperature
+                    setTimeout(() => {
+                        analyzeGrid();
+                        updateMap();
+                        showTemperatureSweep();
+                    }, 500);
+                    
+                } else {
+                    document.getElementById('analysisResults').innerHTML = `
+                        <div style="text-align: center; padding: 20px; color: #4caf50;">
+                            <h4>✅ No Overloads Found</h4>
+                            <p>No transmission lines exceed 100% loading in the temperature range 25-70°C</p>
+                            <p style="font-size: 14px; color: #666; margin-top: 10px;">
+                                Wind Speed: ${data.wind_speed} ft/sec
+                            </p>
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                console.error('Error finding first overload:', error);
+                document.getElementById('analysisResults').innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #f44336;">
+                        <h4>❌ Analysis Error</h4>
+                        <p>Unable to complete first overload analysis</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Initialize dashboard
+        window.onload = function() {
+            initMap();
+            analyzeGrid();
+            showTemperatureSweep();
+        };
+        
+        // Optional: Add Enter key support for inputs
+        document.getElementById('temperature').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                analyzeCurrentConditions();
+            }
+        });
+        
+        document.getElementById('windSpeed').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                analyzeCurrentConditions();
+            }
+        });
+    </script>
+</body>
+</html>
