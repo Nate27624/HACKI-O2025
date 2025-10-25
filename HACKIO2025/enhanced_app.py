@@ -133,6 +133,120 @@ class FlaskGridAnalyzer(AEPGridChallenge):
             'most_critical_lines': critical_lines.head(5).to_dict('records'),
             'stress_progression': stress_results
         }
+    
+    def run_enhanced_n1_contingency(self, ambient_temp=35, wind_speed=2.0, max_lines=None):
+        """Enhanced N-1 Contingency Analysis for Flask interface"""
+        try:
+            # Load PyPSA network
+            network = pypsa.Network()
+            network.import_from_csv_folder('hawaii40_osu/csv')
+            network.pf()
+            
+            violations = []
+            contingency_results = []
+            
+            # Get list of lines to test
+            lines_to_test = network.lines.index[:max_lines] if max_lines else network.lines.index
+            
+            for line_out in lines_to_test:
+                # Create contingency network
+                cont_network = network.copy()
+                cont_network.lines.drop(line_out, inplace=True)
+                
+                try:
+                    cont_network.pf()
+                    
+                    # Check post-contingency loadings
+                    flows = cont_network.lines_t.p0.iloc[0]
+                    line_violations = []
+                    max_loading = 0
+                    
+                    for line_name, flow in flows.items():
+                        if line_name in self.grid_data['name'].values:
+                            line_data = self.grid_data[self.grid_data['name'] == line_name].iloc[0]
+                            rating_amps = self.calculate_dynamic_rating(line_data['conductor'], line_data['MOT'], ambient_temp, wind_speed)
+                            
+                            if rating_amps:
+                                rating_mva = np.sqrt(3) * rating_amps * line_data['v_nom'] * 1000 / 1e6
+                                loading_pct = (abs(flow) / rating_mva) * 100
+                                max_loading = max(max_loading, loading_pct)
+                                
+                                if loading_pct > 80:
+                                    line_violations.append({
+                                        'line_name': str(line_name),
+                                        'branch_name': str(line_data['branch_name']),
+                                        'loading_pct': float(loading_pct),
+                                        'flow': float(abs(flow)),
+                                        'rating': float(rating_mva),
+                                        'conductor': str(line_data['conductor']),
+                                        'voltage': float(line_data['v_nom']),
+                                        'bus0': str(line_data['bus0']),
+                                        'bus1': str(line_data['bus1'])
+                                    })
+                    
+                    # Store contingency result
+                    contingency_results.append({
+                        'contingency_line': str(line_out),
+                        'contingency_name': str(self.grid_data[self.grid_data['name'] == line_out]['branch_name'].iloc[0]) if line_out in self.grid_data['name'].values else str(line_out),
+                        'violations': line_violations,
+                        'violation_count': int(len(line_violations)),
+                        'max_loading': float(max_loading),
+                        'status': 'CRITICAL' if len(line_violations) > 0 else 'NORMAL'
+                    })
+                    
+                    # Add to violations list
+                    for violation in line_violations:
+                        violations.append({
+                            'contingency': str(line_out),
+                            'contingency_name': str(contingency_results[-1]['contingency_name']),
+                            'overloaded_line': str(violation['line_name']),
+                            'overloaded_line_name': str(violation['branch_name']),
+                            'loading_pct': float(violation['loading_pct']),
+                            'flow': float(violation['flow']),
+                            'rating': float(violation['rating']),
+                            'conductor': str(violation['conductor']),
+                            'voltage': float(violation['voltage']),
+                            'bus0': str(violation['bus0']),
+                            'bus1': str(violation['bus1'])
+                        })
+                        
+                except Exception as e:
+                    contingency_results.append({
+                        'contingency_line': str(line_out),
+                        'contingency_name': str(self.grid_data[self.grid_data['name'] == line_out]['branch_name'].iloc[0]) if line_out in self.grid_data['name'].values else str(line_out),
+                        'violations': [],
+                        'violation_count': int(0),
+                        'max_loading': float(0),
+                        'status': 'ERROR',
+                        'error': str(e)
+                    })
+                    continue
+            
+            return {
+                'violations': sorted(violations, key=lambda x: x['loading_pct'], reverse=True),
+                'contingency_results': sorted(contingency_results, key=lambda x: x['violation_count'], reverse=True),
+                'summary': {
+                    'total_contingencies': int(len(contingency_results)),
+                    'critical_contingencies': int(len([c for c in contingency_results if c['status'] == 'CRITICAL'])),
+                    'total_violations': int(len(violations)),
+                    'temperature': float(ambient_temp),
+                    'wind_speed': float(wind_speed)
+                }
+            }
+            
+        except Exception as e:
+            return {
+                'error': f'N-1 analysis failed: {str(e)}',
+                'violations': [],
+                'contingency_results': [],
+                'summary': {
+                    'total_contingencies': int(0),
+                    'critical_contingencies': int(0),
+                    'total_violations': int(0),
+                    'temperature': float(ambient_temp),
+                    'wind_speed': float(wind_speed)
+                }
+            }
 
 # Initialize analyzer with AEP solution
 analyzer = FlaskGridAnalyzer()
@@ -146,6 +260,11 @@ def index():
 def map_view():
     """Map-only dashboard"""
     return render_template('map_dashboard.html')
+
+@app.route('/n1')
+def n1_contingency():
+    """N-1 Contingency Analysis dashboard"""
+    return render_template('n1_dashboard.html')
 
 @app.route('/api/analyze')
 def analyze():
@@ -269,6 +388,19 @@ def find_first_overload():
         'message': 'No overloads found in temperature range 25-70°C',
         'wind_speed': wind
     })
+
+@app.route('/api/n1_analysis')
+def n1_analysis():
+    """N-1 Contingency Analysis API endpoint"""
+    temp = float(request.args.get('temp', 35))
+    wind = float(request.args.get('wind', 2.0))
+    max_lines = request.args.get('max_lines', None)
+    
+    if max_lines:
+        max_lines = int(max_lines)
+    
+    results = analyzer.run_enhanced_n1_contingency(temp, wind, max_lines)
+    return jsonify(results)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)
