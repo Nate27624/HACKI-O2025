@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AEP Dynamic Grid Challenge - Enhanced Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
+            background: linear-gradient(to bottom, #0054e3 0%, #0054e3 3px, #4b91d9 3px, #207dca 98%, #1941a5 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: #000;
+        }
+
+        .header {
+            background: linear-gradient(to bottom, #245edb 0%, #1941a5 50%, #0d2a85 51%, #002266 100%);
+            border-bottom: 1px solid #0d2a85;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .header .site-title {
+            font-size: 16px;
+            color: #ffffff;
+            font-weight: bold;
+            text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+            font-family: 'Tahoma', sans-serif;
+        }
+
+        .header .site-desc {
+            font-size: 11px;
+            color: #b8d4f0;
+            margin-top: 2px;
+            text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+        }
+
+        .site-nav a {
+            color: #ffffff;
+            text-decoration: none;
+            margin-left: 8px;
+            padding: 4px 12px;
+            border-radius: 3px;
+            font-weight: normal;
+            font-size: 11px;
+            background: linear-gradient(to bottom, #4b91d9 0%, #207dca 50%, #1941a5 51%, #002266 100%);
+            border: 1px solid #0d2a85;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+        }
+
+        .site-nav a:hover {
+            background: linear-gradient(to bottom, #5ba0e8 0%, #3087d9 50%, #2850b4 51%, #113375 100%);
+        }
+
+        .site-nav a.active {
+            background: linear-gradient(to bottom, #1941a5 0%, #0d2a85 50%, #002266 51%, #001144 100%);
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        @media (max-width: 720px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .site-nav {
+                margin-top: 8px;
+            }
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 12px;
+        }
+
+        .controls {
+            background: linear-gradient(to bottom, #ece9d8 0%, #e6e2d3 50%, #d8d4c5 51%, #ccc8b9 100%);
+            padding: 12px;
+            border: 2px outset #ece9d8;
+            margin-bottom: 8px;
+            box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            font-family: 'Tahoma', sans-serif;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .control-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .control-item label {
+            font-weight: normal;
+            color: #000;
+            font-size: 11px;
+            font-family: 'Tahoma', sans-serif;
+        }
+
+        .control-item input {
+            padding: 3px 4px;
+            border: 2px inset #ece9d8;
+            background: #ffffff;
+            font-family: 'Tahoma', sans-serif;
+            font-size: 11px;
+            width: 80px;
+        }
+
+        .analyze-btn {
+            background: linear-gradient(to bottom, #ece9d8 0%, #e6e2d3 50%, #d8d4c5 51%, #ccc8b9 100%);
+            color: #000;
+            border: 2px outset #ece9d8;
+            padding: 4px 12px;
+            font-size: 11px;
+            font-weight: normal;
+            cursor: pointer;
+            font-family: 'Tahoma', sans-serif;
+            box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .analyze-btn:hover {
+            background: linear-gradient(to bottom, #f2efde 0%, #ece8d9 50%, #ddd9ca 51%, #d1cdbf 100%);
+        }
+
+        .analyze-btn:active {
+            border: 2px inset #ece9d8;
+            background: linear-gradient(to bottom, #d8d4c5 0%, #ccc8b9 50%, #c0bca8 51%, #b4b09c 100%);
+        }
+
+        #aiSummaryBtn {
+            background: linear-gradient(to bottom, #e8f5e8 0%, #d4f0d4 50%, #c0e8c0 51%, #a8d8a8 100%);
+            border-color: #4caf50;
+        }
+
+        #aiSummaryBtn:hover {
+            background: linear-gradient(to bottom, #f0f8f0 0%, #dcf2dc 50%, #c8ecc8 51%, #b0dcb0 100%);
+        }
+
+        .ai-summary-content {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            text-align: left;
+        }
+
+        .ai-summary-content h4 {
+            color: #2c3e50;
+            margin: 15px 0 8px 0;
+            font-size: 16px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 4px;
+        }
+
+        .ai-summary-content h4:first-child {
+            margin-top: 0;
+        }
+
+        .ai-summary-content ul {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+
+        .ai-summary-content li {
+            margin: 4px 0;
+        }
+
+        .ai-loading {
+            text-align: left;
+            padding: 20px;
+            color: #666;
+        }
+
+        .ai-loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ccc;
+            border-top: 2px solid #4caf50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .map-section {
+            grid-column: 1 / -1;
+            margin-bottom: 8px;
+        }
+
+        .charts-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        #map {
+            height: 500px;
+            border: 2px inset #ece9d8;
+            background: #ffffff;
+        }
+
+        .card {
+            background: linear-gradient(to bottom, #ece9d8 0%, #e6e2d3 50%, #d8d4c5 51%, #ccc8b9 100%);
+            padding: 12px;
+            border: 2px outset #ece9d8;
+            box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            font-family: 'Tahoma', sans-serif;
+        }
+
+        .card h3 {
+            color: #000;
+            margin-bottom: 8px;
+            font-size: 12px;
+            font-weight: bold;
+            font-family: 'Tahoma', sans-serif;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+        }
+
+        .summary-item {
+            text-align: left;
+            padding: 8px;
+            background: linear-gradient(to bottom, #ece9d8 0%, #e6e2d3 50%, #d8d4c5 51%, #ccc8b9 100%);
+            border: 2px outset #ece9d8;
+            box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .summary-item.critical {
+            background: linear-gradient(to bottom, #ffcccc 0%, #ffaaaa 50%, #ff8888 51%, #ff6666 100%);
+            color: #800000;
+            border: 1px inset #ffcccc;
+        }
+
+        .summary-item.caution {
+            background: linear-gradient(to bottom, #ffffcc 0%, #ffff99 50%, #ffff66 51%, #ffff33 100%);
+            color: #cc6600;
+            border: 1px inset #ffffcc;
+        }
+
+        .summary-item.normal {
+            background: linear-gradient(to bottom, #ccffcc 0%, #99ff99 50%, #66ff66 51%, #33ff33 100%);
+            color: #006600;
+            border: 1px inset #ccffcc;
+        }
+
+        .summary-item .number {
+            font-size: 14px;
+            font-weight: bold;
+            display: block;
+            font-family: 'Tahoma', sans-serif;
+        }
+
+        .summary-item .label {
+            font-size: 10px;
+            text-transform: uppercase;
+            margin-top: 2px;
+            font-family: 'Tahoma', sans-serif;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 250px;
+            background: #ffffff;
+            border: 2px inset #ece9d8;
+            padding: 4px;
+        }
+
+        .lines-table {
+            grid-column: 1 / -1;
+        }
+
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            overflow-x: auto;
+            border: 2px inset #ece9d8;
+            background: #ffffff;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+            font-family: 'Tahoma', sans-serif;
+        }
+
+        th,
+        td {
+            padding: 4px 6px;
+            text-align: left;
+            border-bottom: 1px solid #c0c0c0;
+            font-size: 11px;
+        }
+
+        th {
+            background: linear-gradient(to bottom, #ece9d8 0%, #e6e2d3 50%, #d8d4c5 51%, #ccc8b9 100%);
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            white-space: nowrap;
+            border: 1px outset #ece9d8;
+        }
+
+        td {
+            vertical-align: middle;
+        }
+
+        .status-badge {
+            padding: 2px 4px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            border: 1px outset;
+            font-family: 'Tahoma', sans-serif;
+        }
+
+        .status-critical {
+            background: linear-gradient(to bottom, #ffcccc 0%, #ff9999 100%);
+            color: #800000;
+            border-color: #ffcccc;
+        }
+
+        .status-caution {
+            background: linear-gradient(to bottom, #ffffcc 0%, #ffff99 100%);
+            color: #cc6600;
+            border-color: #ffffcc;
+        }
+
+        .status-normal {
+            background: linear-gradient(to bottom, #ccffcc 0%, #99ff99 100%);
+            color: #006600;
+            border-color: #ccffcc;
+        }
+
+        .status-overloaded {
+            background: linear-gradient(to bottom, #e0e0e0 0%, #c0c0c0 100%);
+            color: #000000;
+            border-color: #e0e0e0;
+        }
+
+        .loading {
+            text-align: left;
+            padding: 20px;
+            color: #7f8c8d;
+        }
+
+        .key-findings {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .key-findings h4 {
+            color: #1565c0;
+            margin-bottom: 10px;
+        }
+
+        .key-findings ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .key-findings li {
+            padding: 5px 0;
+            border-left: 3px solid #2196f3;
+            padding-left: 10px;
+            margin-bottom: 5px;
+        }
+
+        .overload-result {
+            background: #fff3e0;
+            border: 2px solid #ff9800;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .overload-result.critical {
+            background: #ffebee;
+            border-color: #f44336;
+        }
+
+        .overload-temp {
+            font-size: 24px;
+            font-weight: bold;
+            color: #d32f2f;
+            text-align: left;
+            margin-bottom: 15px;
+        }
+
+        .line-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .detail-item {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: left;
+        }
+
+        .detail-item .value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .detail-item .label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+
+
+
+        /* Leaflet popup improvements - Windows XP style */
+        .leaflet-popup-content-wrapper {
+            background: linear-gradient(to bottom, #ece9d8 0%, #e6e2d3 50%, #d8d4c5 51%, #ccc8b9 100%);
+            border: 2px outset #ece9d8;
+            box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            min-width: 320px !important;
+            max-width: 400px !important;
+            width: auto !important;
+        }
+
+        .leaflet-popup-content {
+            margin: 8px 10px;
+            line-height: 1.2;
+            min-width: 290px;
+            max-width: 370px;
+            width: auto;
+            overflow: visible;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            font-family: 'Tahoma', sans-serif;
+            font-size: 11px;
+            color: #000;
+        }
+
+        .popup-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2px;
+            min-height: 16px;
+        }
+
+        .popup-label {
+            font-weight: bold;
+            color: #000;
+            flex-shrink: 0;
+            margin-right: 6px;
+            font-family: 'Tahoma', sans-serif;
+        }
+
+        .popup-value {
+            text-align: right;
+            color: #000;
+            flex-grow: 1;
+            word-break: break-all;
+            overflow-wrap: anywhere;
+            font-family: 'Tahoma', sans-serif;
+        }
+
+        .popup-conditions {
+            margin-top: 6px;
+            padding-top: 4px;
+            border-top: 1px inset #ccc8b9;
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+            font-family: 'Tahoma', sans-serif;
+        }
+
+        .leaflet-popup-tip-container {
+            width: 40px;
+            height: 20px;
+        }
+
+        .leaflet-popup-close-button {
+            background: linear-gradient(to bottom, #ece9d8 0%, #e6e2d3 50%, #d8d4c5 51%, #ccc8b9 100%);
+            border: 1px outset #ece9d8;
+            color: #000 !important;
+            font-family: 'Tahoma', sans-serif;
+            font-size: 12px;
+            font-weight: bold;
+            width: 18px;
+            height: 18px;
+            text-align: center;
+            line-height: 14px;
+        }
+
+        .leaflet-popup-close-button:hover {
+            background: linear-gradient(to bottom, #f2efde 0%, #ece8d9 50%, #ddd9ca 51%, #d1cdbf 100%);
+        }
+
+        /* Windows XP scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 16px;
+            height: 16px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: linear-gradient(to bottom, #ece9d8 0%, #e6e2d3 50%, #d8d4c5 51%, #ccc8b9 100%);
+            border: 1px inset #ece9d8;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(to bottom, #ece9d8 0%, #e6e2d3 50%, #d8d4c5 51%, #ccc8b9 100%);
+            border: 1px outset #ece9d8;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(to bottom, #f2efde 0%, #ece8d9 50%, #ddd9ca 51%, #d1cdbf 100%);
+        }
+
+        ::-webkit-scrollbar-button {
+            background: linear-gradient(to bottom, #ece9d8 0%, #e6e2d3 50%, #d8d4c5 51%, #ccc8b9 100%);
+            border: 1px outset #ece9d8;
+            width: 16px;
+            height: 16px;
+        }
+
+        ::-webkit-scrollbar-button:hover {
+            background: linear-gradient(to bottom, #f2efde 0%, #ece8d9 50%, #ddd9ca 51%, #d1cdbf 100%);
+        }
+
+        /* Windows XP focus styling */
+        input:focus,
+        button:focus {
+            outline: 1px dotted #000;
+            outline-offset: -2px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div>
+            <div class="site-title">AEP Dynamic Grid Challenge - Enhanced Dashboard</div>
+            <div class="site-desc">Real-time Hawaii 40-Bus System Analysis with IEEE 738 dynamic ratings</div>
+        </div>
+        <nav class="site-nav" aria-label="Main navigation">
+            <a href="/" class="active">Main Dashboard</a>
+            <a href="/n1">N-1 Analysis</a>
+        </nav>
+    </div>
+
+    <div class="container">
+        <div class="controls">
+            <div
+                style="background: #e3f2fd; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 2px solid #2196f3;">
+                <h4 style="color: #1565c0; margin-bottom: 10px; text-align: left;">Global Weather Conditions</h4>
+                <p style="color: #1976d2; font-size: 14px; text-align: left; margin-bottom: 15px;">
+                    <strong>These values affect ALL analysis, charts, maps, and tables below</strong>
+                </p>
+                <div class="control-group">
+                    <div class="control-item">
+                        <label for="temperature">Ambient Temperature (°C)</label>
+                        <input type="number" id="temperature" value="35" min="20" max="70"
+                            style="border-color: #2196f3;" oninput="updateFahrenheit()">
+                        <div id="fahrenheit" style="font-size: 12px; color: #666; margin-top: 2px;">95°F</div>
+                    </div>
+                    <div class="control-item">
+                        <label for="windSpeed">Wind Speed (ft/sec)</label>
+                        <input type="number" id="windSpeed" value="2.0" min="0.1" max="10" step="0.1"
+                            style="border-color: #2196f3;" oninput="updateMph()">
+                        <div id="mph" style="font-size: 12px; color: #666; margin-top: 2px;">1.4 mph</div>
+                    </div>
+                    <button class="analyze-btn" onclick="analyzeCurrentConditions()">Analyze Current Conditions</button>
+                    <button class="analyze-btn" onclick="findFirstOverload()">Find First Overload</button>
+                </div>
+            </div>
+
+            <div class="card" id="analysisSection" style="margin-top: 20px;">
+                <h3>Current Conditions Analysis</h3>
+                <div id="analysisResults" class="loading">
+                    Click "Analyze Current Conditions" to see detailed analysis...
+                </div>
+            </div>
+
+
+        </div>
+
+        <div class="map-section">
+            <div class="card">
+                <h3>Interactive Hawaii Grid Map</h3>
+                <div id="map"></div>
+                <p style="margin-top: 10px; color: #666; font-size: 14px;">
+                    Lines are color-coded: <span style="color: #4caf50;">Green (Normal)</span>,
+                    <span style="color: #ff9800;">Orange (Caution)</span>,
+                    <span style="color: #f44336;">Red (Critical)</span>,
+                    <span style="color: #000000;">Black (Overloaded >100%)</span>
+                </p>
+            </div>
+        </div>
+
+
+
+        <div class="card">
+            <h3>Temperature vs System Stress</h3>
+            <div class="chart-container">
+                <canvas id="tempChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card lines-table">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0;">Critical Lines Analysis</h3>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <label for="lineCount" style="font-size: 14px; color: #666;">Show:</label>
+                    <select id="lineCount" onchange="updateLinesDisplay()"
+                        style="padding: 5px; border: 1px solid #e0e0e0; border-radius: 5px;">
+                        <option value="10">Top 10</option>
+                        <option value="25" selected>Top 25</option>
+                        <option value="50">Top 50</option>
+                        <option value="100">Top 100</option>
+                        <option value="all">All Lines</option>
+                    </select>
+                    <span style="font-size: 14px; color: #666;">lines</span>
+                </div>
+            </div>
+            <div id="linesTable" class="loading">
+                Waiting for analysis...
+            </div>
+        </div>
+
+    </div>
+
+    <!-- AI Summary Section - Moved to Bottom -->
+    <div class="container">
+        <div class="card" id="aiSummarySection" style="margin-top: 20px;">
+            <div style="text-align: center; margin-bottom: 15px;">
+                <button class="analyze-btn" id="aiSummaryBtn" onclick="generateAISummary('dashboard')">AI Summary & Recommendations</button>
+            </div>
+            <div id="aiSummaryResults" style="display: none;">
+                <h3>🤖 AI Summary & Recommendations</h3>
+                <div class="ai-summary-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let tempChart = null;
+        let map = null;
+        let gridLayer = null;
+        let currentLinesData = [];
+
+        async function analyzeGrid() {
+            const temp = document.getElementById('temperature').value;
+            const wind = document.getElementById('windSpeed').value;
+
+            document.getElementById('linesTable').innerHTML = '<div class="loading">Calculating...</div>';
+
+            try {
+                const response = await fetch(`/api/analyze?temp=${temp}&wind=${wind}`);
+                const data = await response.json();
+
+                displayLinesTable(data.lines);
+
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Analyze current conditions from input boxes
+        async function analyzeCurrentConditions() {
+            const temp = document.getElementById('temperature').value;
+            const wind = document.getElementById('windSpeed').value;
+
+            // Show loading state
+            document.getElementById('analysisResults').innerHTML = '<div class="loading">Analyzing current conditions...</div>';
+
+            try {
+                // Run all analyses
+                await analyzeGrid();
+                await updateMap();
+                await showTemperatureSweep();
+
+                // Get detailed analysis for current conditions
+                const response = await fetch(`/api/analyze?temp=${temp}&wind=${wind}`);
+                const data = await response.json();
+
+                // Display detailed analysis
+                displayCurrentAnalysis(data, temp, wind);
+
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('analysisResults').innerHTML = `
+                    <div style="text-align: left; padding: 20px; color: #f44336;">
+                        <h4>Analysis Error</h4>
+                        <p>Unable to complete analysis</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Display detailed analysis for current conditions
+        function displayCurrentAnalysis(data, temp, wind) {
+            const overloadedLines = data.lines.filter(line => line.loading > 100);
+            const criticalLines = data.lines.filter(line => line.loading >= 90 && line.loading <= 100);
+            const mostLoadedLine = data.lines[0]; // Already sorted by loading
+
+            const systemStatus = overloadedLines.length > 0 ? 'OVERLOADED' :
+                data.summary.critical > 0 ? 'CRITICAL' :
+                    data.summary.caution > 5 ? 'CAUTION' : 'NORMAL';
+
+            const statusColor = overloadedLines.length > 0 ? '#000000' :
+                systemStatus === 'CRITICAL' ? '#ff0000' :
+                    systemStatus === 'CAUTION' ? '#ff8c00' : '#4caf50';
+
+            const html = `
+                <div class="overload-result">
+                    <div style="text-align: left; margin-bottom: 20px;">
+                        <h4 style="color: ${statusColor}; font-size: 20px; margin-bottom: 10px;">
+                            System Status: ${systemStatus}
+                        </h4>
+                        <p style="color: #666; font-size: 14px;">
+                            Conditions: ${temp}°C, ${wind} ft/sec wind
+                        </p>
+                    </div>
+                    
+                    <div class="line-details">
+                        <div class="detail-item">
+                            <div class="value" style="color: ${overloadedLines.length > 0 ? '#000' : '#4caf50'};">
+                                ${overloadedLines.length}
+                            </div>
+                            <div class="label">Overloaded Lines</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="value" style="color: #f44336;">
+                                ${data.summary.critical}
+                            </div>
+                            <div class="label">Critical Lines</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="value" style="color: #ff9800;">
+                                ${data.summary.caution}
+                            </div>
+                            <div class="label">Caution Lines</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="value" style="color: #4caf50;">
+                                ${data.summary.normal}
+                            </div>
+                            <div class="label">Normal Lines</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="value" style="color: #2c3e50;">
+                                ${data.summary.max_loading.toFixed(1)}%
+                            </div>
+                            <div class="label">Max Loading</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="value" style="color: #2c3e50;">
+                                ${data.summary.avg_loading.toFixed(1)}%
+                            </div>
+                            <div class="label">Avg Loading</div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <h4 style="color: #2c3e50; margin-bottom: 10px;">Most Loaded Line:</h4>
+                        <p style="font-weight: bold; margin-bottom: 10px;">${mostLoadedLine.branch_name}</p>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                            <div style="text-align: left; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                                <div style="font-weight: bold; color: ${mostLoadedLine.loading > 100 ? '#000' : mostLoadedLine.loading >= 90 ? '#f44336' : '#2c3e50'};">
+                                    ${mostLoadedLine.loading.toFixed(1)}%
+                                </div>
+                                <div style="font-size: 12px; color: #666;">Loading</div>
+                            </div>
+                            <div style="text-align: left; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                                <div style="font-weight: bold; color: #2c3e50;">${mostLoadedLine.flow.toFixed(1)} MW</div>
+                                <div style="font-size: 12px; color: #666;">Flow</div>
+                            </div>
+                            <div style="text-align: left; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                                <div style="font-weight: bold; color: #2c3e50;">${mostLoadedLine.rating.toFixed(1)} MVA</div>
+                                <div style="font-size: 12px; color: #666;">Rating</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${overloadedLines.length > 0 ? `
+                        <div style="margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.1); border-radius: 5px; font-size: 13px;">
+                            <strong>Warning:</strong> ${overloadedLines.length} line${overloadedLines.length > 1 ? 's are' : ' is'} overloaded (>100%). 
+                            Consider reducing load or upgrading conductors.
+                        </div>
+                    ` : data.summary.critical > 0 ? `
+                        <div style="margin-top: 15px; padding: 10px; background: rgba(244,67,54,0.1); border-radius: 5px; font-size: 13px;">
+                            <strong>Caution:</strong> ${data.summary.critical} line${data.summary.critical > 1 ? 's are' : ' is'} in critical range (90-100%). 
+                            Monitor closely as temperature increases.
+                        </div>
+                    ` : `
+                        <div style="margin-top: 15px; padding: 10px; background: rgba(76,175,80,0.1); border-radius: 5px; font-size: 13px;">
+                            <strong>Status:</strong> All lines are operating within safe limits under these conditions.
+                        </div>
+                    `}
+                </div>
+            `;
+
+            document.getElementById('analysisResults').innerHTML = html;
+        }
+
+        // Test specific scenarios
+        async function testScenario(temp, wind) {
+            document.getElementById('temperature').value = temp;
+            document.getElementById('windSpeed').value = wind;
+
+            await analyzeGrid();
+            await updateMap();
+            await showTemperatureSweep();
+        }
+
+
+
+        function displayLinesTable(lines) {
+            // Store current lines data for custom display updates
+            currentLinesData = lines;
+            updateLinesDisplay();
+        }
+
+        function updateLinesDisplay() {
+            if (currentLinesData.length === 0) return;
+
+            const temp = document.getElementById('temperature').value;
+            const wind = document.getElementById('windSpeed').value;
+            const lineCount = document.getElementById('lineCount').value;
+            const linesToShow = lineCount === 'all' ? currentLinesData : currentLinesData.slice(0, parseInt(lineCount));
+
+            // Update table title
+            document.querySelector('.lines-table h3').innerHTML = `Critical Lines Analysis (${temp}°C, ${wind} ft/s)`;
+
+            const tableHtml = `
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">Rank</th>
+                                <th style="width: 80px;">Line ID</th>
+                                <th style="width: 200px;">Line Name</th>
+                                <th style="width: 100px;">Conductor</th>
+                                <th style="width: 60px;">kV</th>
+                                <th style="width: 80px;">Flow (MW)</th>
+                                <th style="width: 90px;">Rating (MVA)</th>
+                                <th style="width: 80px;">Loading</th>
+                                <th style="width: 80px;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${linesToShow.map((line, index) => `
+                                <tr style="${line.loading > 100 ? 'background-color: #f5f5f5;' : line.loading >= 90 ? 'background-color: #ffebee;' : ''}">
+                                    <td style="text-align: left; font-weight: bold; color: ${line.loading > 100 ? '#424242' : '#666'};">
+                                        #${index + 1}
+                                    </td>
+                                    <td style="font-family: monospace; font-size: 12px; color: ${line.loading > 100 ? '#424242' : 'inherit'};">
+                                        ${line.name}
+                                    </td>
+                                    <td title="${line.branch_name}" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: ${line.loading > 100 ? '#424242' : 'inherit'};">
+                                        ${line.branch_name}
+                                    </td>
+                                    <td style="color: ${line.loading > 100 ? '#424242' : 'inherit'};">${line.conductor_display}</td>
+                                    <td style="color: ${line.loading > 100 ? '#424242' : 'inherit'};">${line.voltage}</td>
+                                    <td style="color: ${line.loading > 100 ? '#424242' : 'inherit'};">${line.flow.toFixed(1)}</td>
+                                    <td style="color: ${line.loading > 100 ? '#424242' : 'inherit'};">${line.rating.toFixed(1)}</td>
+                                    <td style="font-weight: ${line.loading > 100 ? 'bold' : 'normal'}; color: ${line.loading > 100 ? '#212121' : line.loading >= 90 ? '#f44336' : '#333'};">
+                                        ${line.loading.toFixed(1)}%
+                                    </td>
+                                    <td><span class="status-badge ${line.loading > 100 ? 'status-overloaded' : 'status-' + line.status}">${line.loading > 100 ? 'OVERLOADED' : line.status}</span></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <p style="color: #7f8c8d; font-size: 14px;">
+                        Showing ${linesToShow.length} of ${currentLinesData.length} lines (sorted by loading %) at ${temp}°C, ${wind} ft/s
+                    </p>
+                    <div style="font-size: 12px; color: #666;">
+                        <span style="background: #f5f5f5; color: #424242; padding: 2px 6px; border-radius: 3px; margin-right: 5px; border: 1px solid #e0e0e0;">Overloaded (>100%)</span>
+                        <span style="background: #ffebee; padding: 2px 6px; border-radius: 3px;">Critical (90-100%)</span>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('linesTable').innerHTML = tableHtml;
+        }
+
+        async function showTemperatureSweep() {
+            const wind = document.getElementById('windSpeed').value;
+
+            try {
+                const response = await fetch(`/api/temperature_sweep?wind=${wind}`);
+                const data = await response.json();
+
+                updateTemperatureChart(data);
+
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function updateTemperatureChart(data) {
+            const ctx = document.getElementById('tempChart').getContext('2d');
+            const wind = document.getElementById('windSpeed').value;
+
+            // Update chart title
+            document.querySelector('.card:has(#tempChart) h3').innerHTML = `Temperature vs System Stress (Wind: ${wind} ft/s)`;
+
+            if (tempChart) {
+                tempChart.destroy();
+            }
+
+            tempChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.temperature + '°C'),
+                    datasets: [
+                        {
+                            label: 'Overloaded Lines (>100%)',
+                            data: data.map(d => d.overloaded_lines || 0),
+                            borderColor: '#000000',
+                            backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            borderWidth: 3
+                        },
+                        {
+                            label: 'Critical Lines (90-100%)',
+                            data: data.map(d => d.critical),
+                            borderColor: '#e53e3e',
+                            backgroundColor: 'rgba(229, 62, 62, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Caution Lines (60-90%)',
+                            data: data.map(d => d.caution),
+                            borderColor: '#ff8c00',
+                            backgroundColor: 'rgba(255, 140, 0, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Normal Lines (<60%)',
+                            data: data.map(d => d.normal),
+                            borderColor: '#4caf50',
+                            backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Lines'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Temperature (°C)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `When Do Lines Start to Overload? (Wind: ${wind} ft/s)`
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize map
+        function initMap() {
+            // Center on Hawaii
+            map = L.map('map').setView([21.3, -157.8], 9);
+
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            updateMap();
+        }
+
+        // Update map with current conditions
+        async function updateMap() {
+            const temp = document.getElementById('temperature').value;
+            const wind = document.getElementById('windSpeed').value;
+
+            // Update map title
+            document.querySelector('.map-section .card h3').innerHTML = `Interactive Hawaii Grid Map (${temp}°C, ${wind} ft/s)`;
+
+            try {
+                const response = await fetch(`/api/gis_data?temp=${temp}&wind=${wind}`);
+                const gisData = await response.json();
+
+                if (gisData && gisData.features) {
+                    // Remove existing layer
+                    if (gridLayer) {
+                        map.removeLayer(gridLayer);
+                    }
+
+                    // Add new layer with loading data
+                    gridLayer = L.geoJSON(gisData, {
+                        style: function (feature) {
+                            const loading = feature.properties.loading || 0;
+                            const status = feature.properties.status || 'normal';
+
+                            let color = '#4caf50'; // Green for normal
+                            if (loading > 100) color = '#000000'; // Black for overloaded
+                            else if (status === 'critical') color = '#ff0000'; // Pure red for critical
+                            else if (status === 'caution') color = '#ff8c00'; // Orange-yellow for caution
+
+                            return {
+                                color: color,
+                                weight: Math.max(3, Math.min(10, loading / 15)),
+                                opacity: loading > 100 ? 1.0 : 0.8
+                            };
+                        },
+                        onEachFeature: function (feature, layer) {
+                            const props = feature.properties;
+                            const loading = props.loading || 0;
+                            const status = loading > 100 ? 'OVERLOADED' : (props.status || 'normal').toUpperCase();
+                            const statusColor = loading > 100 ? '#000000' :
+                                status === 'CRITICAL' ? '#ff0000' :
+                                    status === 'CAUTION' ? '#ff8c00' : '#4caf50';
+
+                            // Truncate long line names for better display
+                            const displayName = props.branch_name || props.Name || 'Unknown Line';
+                            const truncatedName = displayName.length > 45 ? displayName.substring(0, 42) + '...' : displayName;
+
+                            const popupContent = `
+                                <div style="${status === 'CRITICAL' ? 'background: rgba(255,0,0,0.15); border: 2px solid #ff0000; padding: 4px; margin: -4px;' : status === 'CAUTION' ? 'background: rgba(255,204,0,0.2); border: 2px solid #cc9900; padding: 4px; margin: -4px;' : ''}">
+                                    <div style="background: linear-gradient(to bottom, #245edb 0%, #1941a5 50%, #0d2a85 51%, #002266 100%); color: white; padding: 2px 6px; margin: -8px -10px 6px -10px; font-size: 11px; font-weight: bold; text-shadow: 1px 1px 1px rgba(0,0,0,0.5);" title="${displayName}">
+                                        ${truncatedName}
+                                    </div>
+                                    <div style="font-size: 13px;">
+                                        <div class="popup-row">
+                                            <span class="popup-label">Loading:</span>
+                                            <span class="popup-value" style="color: ${loading > 100 ? '#000000' : status === 'CRITICAL' ? '#ff0000' : status === 'CAUTION' ? '#cc9900' : '#4caf50'}; font-weight: bold; ${status === 'CAUTION' ? 'text-shadow: 1px 1px 1px rgba(0,0,0,0.3);' : ''}">${loading.toFixed(1)}%</span>
+                                        </div>
+                                        <div class="popup-row">
+                                            <span class="popup-label">Status:</span>
+                                            <span class="popup-value" style="text-transform: uppercase; font-weight: bold; color: ${loading > 100 ? '#000000' : status === 'CRITICAL' ? '#ff0000' : status === 'CAUTION' ? '#cc9900' : '#4caf50'}; ${status === 'CAUTION' ? 'text-shadow: 1px 1px 1px rgba(0,0,0,0.3);' : ''}">${loading > 100 ? 'OVERLOADED' : status.toUpperCase()}</span>
+                                        </div>
+                                        <div class="popup-row">
+                                            <span class="popup-label">Flow:</span>
+                                            <span class="popup-value">${(props.flow || 0).toFixed(1)} MW</span>
+                                        </div>
+                                        <div class="popup-row">
+                                            <span class="popup-label">Rating:</span>
+                                            <span class="popup-value">${(props.rating || 0).toFixed(1)} MVA</span>
+                                        </div>
+                                        <div class="popup-row">
+                                            <span class="popup-label">Conductor:</span>
+                                            <span class="popup-value">${props.conductor_display || props.conductor || 'Unknown'}</span>
+                                        </div>
+                                        <div class="popup-row">
+                                            <span class="popup-label">Line ID:</span>
+                                            <span class="popup-value" style="font-family: monospace; font-size: 11px;">${props.Name || 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                    <div class="popup-conditions">
+                                        Conditions: ${temp}°C, ${wind} ft/sec wind
+                                    </div>
+                                </div>
+                            `;
+                            layer.bindPopup(popupContent);
+
+
+                        }
+                    }).addTo(map);
+                }
+            } catch (error) {
+                console.error('Error updating map:', error);
+            }
+        }
+
+
+
+        // Find first overload analysis
+        async function findFirstOverload() {
+            const wind = document.getElementById('windSpeed').value;
+
+            // Show loading state in analysis section
+            document.getElementById('analysisResults').innerHTML = '<div class="loading">Analyzing temperature range to find first overload...</div>';
+
+            try {
+                const response = await fetch(`/api/find_first_overload?wind=${wind}`);
+                const data = await response.json();
+
+                if (data.critical_temperature) {
+                    const line = data.first_overload_line;
+                    const resultClass = line.loading > 110 ? 'critical' : '';
+
+                    const html = `
+                        <div class="overload-result ${resultClass}">
+                            <div class="overload-temp">
+                                First overload at ${data.critical_temperature}°C
+                            </div>
+                            <p style="text-align: left; margin-bottom: 15px; color: #666;">
+                                Wind Speed: ${data.wind_speed} ft/sec | Total Overloaded Lines: ${data.total_overloaded}
+                            </p>
+                            
+                            <h4 style="color: #d32f2f; margin-bottom: 10px;">Most Critical Line:</h4>
+                            <p style="font-weight: bold; margin-bottom: 10px;">${line.branch_name}</p>
+                            
+                            <div class="line-details">
+                                <div class="detail-item">
+                                    <div class="value">${line.name}</div>
+                                    <div class="label">Line ID</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="value" style="color: #d32f2f;">${line.loading.toFixed(1)}%</div>
+                                    <div class="label">Loading</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="value">${line.flow.toFixed(1)} MW</div>
+                                    <div class="label">Power Flow</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="value">${line.rating.toFixed(1)} MVA</div>
+                                    <div class="label">Dynamic Rating</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="value">${line.voltage} kV</div>
+                                    <div class="label">Voltage Level</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="value">${line.conductor_display}</div>
+                                    <div class="label">Conductor Type</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="value">${line.bus0} → ${line.bus1}</div>
+                                    <div class="label">Connection</div>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.7); border-radius: 5px; font-size: 13px;">
+                                <strong>Answer:</strong> Lines start to overload at ${data.critical_temperature}°C. 
+                                Line ${line.name} (${line.branch_name}) reaches ${line.loading.toFixed(1)}% loading, 
+                                exceeding the 100% thermal limit.
+                            </div>
+                        </div>
+                    `;
+
+                    document.getElementById('analysisResults').innerHTML = html;
+
+                    // Update temperature input to show critical temperature
+                    document.getElementById('temperature').value = data.critical_temperature;
+
+                    // Trigger analysis at critical temperature
+                    setTimeout(() => {
+                        analyzeGrid();
+                        updateMap();
+                        showTemperatureSweep();
+                    }, 500);
+
+                } else {
+                    document.getElementById('analysisResults').innerHTML = `
+                        <div style="text-align: left; padding: 20px; color: #4caf50;">
+                            <h4>No overloads found</h4>
+                            <p>No transmission lines exceed 100% loading in the temperature range 25-70°C</p>
+                            <p style="font-size: 14px; color: #666; margin-top: 10px;">
+                                Wind Speed: ${data.wind_speed} ft/sec
+                            </p>
+                        </div>
+                    `;
+                }
+
+            } catch (error) {
+                console.error('Error finding first overload:', error);
+                document.getElementById('analysisResults').innerHTML = `
+                    <div style="text-align: left; padding: 20px; color: #f44336;">
+                        <h4>Analysis Error</h4>
+                        <p>Unable to complete first overload analysis</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Convert Celsius to Fahrenheit
+        function updateFahrenheit() {
+            const celsius = document.getElementById('temperature').value;
+            const fahrenheit = (celsius * 9 / 5) + 32;
+            document.getElementById('fahrenheit').textContent = fahrenheit.toFixed(0) + '°F';
+        }
+
+        // Convert ft/sec to mph
+        function updateMph() {
+            const ftPerSec = document.getElementById('windSpeed').value;
+            const mph = ftPerSec * 0.681818; // 1 ft/sec = 0.681818 mph
+            document.getElementById('mph').textContent = mph.toFixed(1) + ' mph';
+        }
+
+        // Initialize dashboard
+        window.onload = function () {
+            updateFahrenheit();
+            updateMph();
+            initMap();
+            analyzeGrid();
+            showTemperatureSweep();
+        };
+
+        // Optional: Add Enter key support for inputs
+        document.getElementById('temperature').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                analyzeCurrentConditions();
+            }
+        });
+
+        document.getElementById('windSpeed').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                analyzeCurrentConditions();
+            }
+        });
+
+        // AI Summary functionality
+        async function generateAISummary(type = 'dashboard') {
+            const summaryResults = document.getElementById('aiSummaryResults');
+            const summaryBtn = document.getElementById('aiSummaryBtn');
+            
+            // Show results section and loading state
+            summaryResults.style.display = 'block';
+            summaryResults.innerHTML = '<div class="ai-loading">Generating AI analysis...</div>';
+            summaryBtn.disabled = true;
+            summaryBtn.innerHTML = 'Generating...';
+            
+            try {
+                const response = await fetch('/api/ai-summary', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ type: type })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Format the AI response
+                    const formattedSummary = formatAISummary(result.summary);
+                    summaryResults.innerHTML = `
+                        <h3>🤖 AI Summary & Recommendations</h3>
+                        <div class="ai-summary-content">
+                            ${formattedSummary}
+                            <div style="margin-top: 15px; padding: 8px; background: rgba(76, 175, 80, 0.1); border-left: 4px solid #4caf50; font-size: 12px; color: #666;">
+                                <strong>Generated:</strong> ${new Date(result.timestamp).toLocaleString()}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    summaryResults.innerHTML = `
+                        <h3>AI Summary & Recommendations</h3>
+                        <div style="color: #d32f2f; padding: 15px; background: #ffebee; border-radius: 4px;">
+                            <strong>Error:</strong> ${result.error}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                summaryResults.innerHTML = `
+                    <h3>AI Summary & Recommendations</h3>
+                    <div style="color: #d32f2f; padding: 15px; background: #ffebee; border-radius: 4px;">
+                        <strong>Error:</strong> Failed to generate AI summary. ${error.message}
+                    </div>
+                `;
+            } finally {
+                summaryBtn.disabled = false;
+                summaryBtn.innerHTML = 'AI Summary & Recommendations';
+            }
+        }
+
+        function formatAISummary(text) {
+            // Convert markdown-like formatting to HTML
+            let formatted = text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/^(\d+\.\s.*$)/gm, '<h4>$1</h4>')
+                .replace(/^-\s(.*)$/gm, '<li>$1</li>')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>');
+            
+            // Wrap consecutive list items in ul tags
+            formatted = formatted.replace(/(<li>.*?<\/li>)(\s*<li>.*?<\/li>)*/g, function(match) {
+                return '<ul>' + match + '</ul>';
+            });
+            
+            // Wrap in paragraphs
+            if (!formatted.startsWith('<h4>') && !formatted.startsWith('<ul>')) {
+                formatted = '<p>' + formatted + '</p>';
+            }
+            
+            return formatted;
+        }
+
+    </script>
+</body>
+
+</html>
