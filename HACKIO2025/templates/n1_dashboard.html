@@ -14,21 +14,50 @@
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #f5f7fa;
             min-height: 100vh;
             color: #333;
         }
         
         .header {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: #ffffff;
+            border-bottom: 1px solid #e6eef8;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
         }
-        
-        .header h1 {
+
+        .header .site-title {
+            font-size: 18px;
             color: #2c3e50;
-            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header .site-desc {
+            font-size: 13px;
+            color: #667085;
+            margin-top: 4px;
+        }
+
+        .site-nav a {
+            color: #2b6cb0;
+            text-decoration: none;
+            margin-left: 12px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .site-nav a.active {
+            background: #eaf3ff;
+            color: #1d4e89;
+        }
+
+        @media (max-width: 720px) {
+            .header { flex-direction: column; align-items: flex-start; }
+            .site-nav { margin-top: 8px; }
         }
         
         .nav-links {
@@ -94,15 +123,15 @@
         }
         
         .analyze-btn {
-            background: linear-gradient(45deg, #667eea, #764ba2);
+            background: #2b6cb0;
             color: white;
             border: none;
-            padding: 12px 25px;
-            border-radius: 8px;
-            font-size: 16px;
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: transform 0.15s;
         }
         
         .analyze-btn:hover {
@@ -405,33 +434,35 @@
 </head>
 <body>
     <div class="header">
-        <h1>⚡ AEP Dynamic Grid Challenge - N-1 Contingency Analysis</h1>
-        <p>Comprehensive transmission line outage analysis for Hawaii 40-Bus System</p>
-        <div class="nav-links">
+        <div>
+            <div class="site-title">AEP Dynamic Grid Challenge - N-1 Contingency Analysis</div>
+            <div class="site-desc">Comprehensive transmission line outage analysis for Hawaii 40-Bus System</div>
+        </div>
+        <nav class="site-nav" aria-label="Main navigation">
             <a href="/">Main Dashboard</a>
             <a href="/map">Grid Map</a>
             <a href="/n1" class="active">N-1 Analysis</a>
-        </div>
+        </nav>
     </div>
     
     <div class="container">
         <div class="controls">
             <div style="background: #e3f2fd; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 2px solid #2196f3;">
-                <h4 style="color: #1565c0; margin-bottom: 10px; text-align: center;">🌡️ N-1 Analysis Conditions</h4>
+                <h4 style="color: #1565c0; margin-bottom: 10px; text-align: center;">N-1 Analysis Conditions</h4>
                 <p style="color: #1976d2; font-size: 14px; text-align: center; margin-bottom: 15px;">
                     <strong>Test grid stability by removing transmission lines one at a time</strong>
                 </p>
                 <div class="control-group">
                     <div class="control-item">
-                        <label for="temperature">🌡️ Temperature (°C)</label>
+                        <label for="temperature">Temperature (°C)</label>
                         <input type="number" id="temperature" value="35" min="20" max="70" style="border-color: #2196f3;">
                     </div>
                     <div class="control-item">
-                        <label for="windSpeed">💨 Wind Speed (ft/sec)</label>
+                        <label for="windSpeed">Wind Speed (ft/sec)</label>
                         <input type="number" id="windSpeed" value="2.0" min="0.1" max="10" step="0.1" style="border-color: #2196f3;">
                     </div>
                     <div class="control-item">
-                        <label for="maxLines">📊 Lines to Test</label>
+                        <label for="maxLines">Lines to Test</label>
                         <select id="maxLines" style="border-color: #2196f3;">
                             <option value="10">First 10 Lines</option>
                             <option value="20">First 20 Lines</option>
@@ -439,13 +470,13 @@
                             <option value="">All Lines</option>
                         </select>
                     </div>
-                    <button class="analyze-btn" onclick="runN1Analysis()">⚡ Run N-1 Analysis</button>
+                    <button class="analyze-btn" onclick="runN1Analysis()">Run N-1 Analysis</button>
                 </div>
             </div>
         </div>
         
         <div class="card">
-            <h3>📊 N-1 Analysis Summary</h3>
+            <h3>N-1 Analysis Summary</h3>
             <div id="summary" class="loading">
                 Click "Run N-1 Analysis" to start contingency testing...
             </div>
@@ -460,14 +491,14 @@
         
         <div class="card">
             <div class="tabs">
-                <div class="tab active" onclick="switchTab('violations')">🚨 Violations</div>
-                <div class="tab" onclick="switchTab('contingencies')">⚡ Contingencies</div>
-                <div class="tab" onclick="switchTab('statistics')">📊 Statistics</div>
-                <div class="tab" onclick="switchTab('chart')">📈 Analysis Chart</div>
+                <div class="tab active" onclick="switchTab('violations')">Violations</div>
+                <div class="tab" onclick="switchTab('contingencies')">Contingencies</div>
+                <div class="tab" onclick="switchTab('statistics')">Statistics</div>
+                <div class="tab" onclick="switchTab('chart')">Analysis Chart</div>
             </div>
             
             <div id="violations" class="tab-content active">
-                <h3>🚨 Post-Contingency Violations</h3>
+                <h3>Post-Contingency Violations</h3>
                 <div class="filter-controls">
                     <div class="filter-item">
                         <label>Min Loading (%)</label>
@@ -489,7 +520,7 @@
                             <option value="">All Conductors</option>
                         </select>
                     </div>
-                    <button class="export-btn" onclick="exportViolations()">📊 Export CSV</button>
+                    <button class="export-btn" onclick="exportViolations()">Export CSV</button>
                 </div>
                 <div id="violationsTable" class="loading">
                     Run analysis to see violations...
@@ -497,7 +528,7 @@
             </div>
             
             <div id="contingencies" class="tab-content">
-                <h3>⚡ Contingency Results</h3>
+                <h3>Contingency Results</h3>
                 <div class="filter-controls">
                     <div class="filter-item">
                         <label>Min Violations</label>
@@ -511,7 +542,7 @@
                             <option value="NORMAL">Normal Only</option>
                         </select>
                     </div>
-                    <button class="export-btn" onclick="exportContingencies()">📊 Export CSV</button>
+                    <button class="export-btn" onclick="exportContingencies()">Export CSV</button>
                 </div>
                 <div id="contingenciesTable" class="loading">
                     Run analysis to see contingency results...
@@ -519,14 +550,14 @@
             </div>
             
             <div id="statistics" class="tab-content">
-                <h3>📊 Analysis Statistics</h3>
+                <h3>Analysis Statistics</h3>
                 <div id="statisticsContent" class="loading">
                     Run analysis to see detailed statistics...
                 </div>
             </div>
             
             <div id="chart" class="tab-content">
-                <h3>📈 N-1 Analysis Visualization</h3>
+                <h3>N-1 Analysis Visualization</h3>
                 <div class="chart-container">
                     <canvas id="n1Chart"></canvas>
                 </div>
@@ -534,7 +565,7 @@
         </div>
         
         <div class="card">
-            <h4>🎯 About N-1 Contingency Analysis</h4>
+            <h4>About N-1 Contingency Analysis</h4>
             <p style="line-height: 1.6; color: #666;">
                 N-1 contingency analysis tests grid reliability by simulating the outage of each transmission line 
                 and checking if the remaining system can handle the redistributed power flows without overloading. 
@@ -561,7 +592,7 @@
             const maxLines = document.getElementById('maxLines').value;
             
             // Show loading states
-            document.getElementById('summary').innerHTML = '<div class="loading">🔍 Running N-1 contingency analysis...</div>';
+            document.getElementById('summary').innerHTML = '<div class="loading">Running N-1 contingency analysis...</div>';
             document.getElementById('violationsTable').innerHTML = '<div class="loading">Analyzing contingencies...</div>';
             document.getElementById('contingenciesTable').innerHTML = '<div class="loading">Processing results...</div>';
             
@@ -586,7 +617,7 @@
                 if (data.error) {
                     document.getElementById('summary').innerHTML = `
                         <div style="text-align: center; padding: 20px; color: #f44336;">
-                            <h4>❌ Analysis Error</h4>
+                            <h4>Analysis Error</h4>
                             <p>${data.error}</p>
                         </div>
                     `;
@@ -605,7 +636,7 @@
                 document.getElementById('progressContainer').style.display = 'none';
                 document.getElementById('summary').innerHTML = `
                     <div style="text-align: center; padding: 20px; color: #f44336;">
-                        <h4>❌ Analysis Failed</h4>
+                        <h4>Analysis Failed</h4>
                         <p>Unable to complete N-1 analysis</p>
                     </div>
                 `;
@@ -679,9 +710,9 @@
             if (violations.length === 0) {
                 document.getElementById('violationsTable').innerHTML = `
                     <div style="text-align: center; padding: 20px; color: #4caf50;">
-                        <h4>✅ No Violations Found</h4>
-                        <p>All contingencies passed - system is N-1 secure under these conditions</p>
-                    </div>
+                            <h4>No Violations Found</h4>
+                            <p>All contingencies passed - system is N-1 secure under these conditions</p>
+                        </div>
                 `;
                 return;
             }
@@ -730,7 +761,7 @@
                                         <td>${violation.flow.toFixed(1)}</td>
                                         <td>${violation.rating.toFixed(1)}</td>
                                         <td style="text-align: center;">
-                                            <span style="cursor: pointer; color: #667eea;">📋 Details</span>
+                                            <span style="cursor: pointer; color: #667eea;">Details</span>
                                         </td>
                                     </tr>
                                     <tr id="details-${index}" class="details-row">
@@ -822,7 +853,7 @@
                                             ${riskLevel.toUpperCase()}
                                         </td>
                                         <td style="text-align: center;">
-                                            <span style="cursor: pointer; color: #667eea;">📋 Details</span>
+                                            <span style="cursor: pointer; color: #667eea;">Details</span>
                                         </td>
                                     </tr>
                                     <tr id="cont-details-${index}" class="details-row">
@@ -1035,7 +1066,7 @@
             
             const statisticsHtml = `
                 <div class="analysis-metadata">
-                    <h4 style="margin-bottom: 15px; text-align: center;">📊 Analysis Metadata</h4>
+                    <h4 style="margin-bottom: 15px; text-align: center;">Analysis Metadata</h4>
                     <div class="metadata-grid">
                         <div class="metadata-item">
                             <div class="metadata-value">${data.summary.temperature}°C</div>
@@ -1075,7 +1106,7 @@
                     </div>
                 </div>
                 
-                <h4>🚨 Violation Severity Distribution</h4>
+                <h4>Violation Severity Distribution</h4>
                 <div class="stats-grid">
                     <div class="stat-card" style="border-left: 4px solid #f44336;">
                         <div class="stat-value">${severityStats.critical}</div>
@@ -1095,7 +1126,7 @@
                     </div>
                 </div>
                 
-                <h4>⚡ Contingency Risk Distribution</h4>
+                <h4>Contingency Risk Distribution</h4>
                 <div class="stats-grid">
                     <div class="stat-card" style="border-left: 4px solid #f44336;">
                         <div class="stat-value">${riskStats.critical}</div>

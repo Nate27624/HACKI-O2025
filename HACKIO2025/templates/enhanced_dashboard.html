@@ -16,21 +16,50 @@
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #f5f7fa;
             min-height: 100vh;
             color: #333;
         }
         
         .header {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: #ffffff;
+            border-bottom: 1px solid #e6eef8;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
         }
-        
-        .header h1 {
+
+        .header .site-title {
+            font-size: 18px;
             color: #2c3e50;
-            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header .site-desc {
+            font-size: 13px;
+            color: #667085;
+            margin-top: 4px;
+        }
+
+        .site-nav a {
+            color: #2b6cb0;
+            text-decoration: none;
+            margin-left: 12px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .site-nav a.active {
+            background: #eaf3ff;
+            color: #1d4e89;
+        }
+
+        @media (max-width: 720px) {
+            .header { flex-direction: column; align-items: flex-start; }
+            .site-nav { margin-top: 8px; }
         }
         
         .container {
@@ -74,15 +103,15 @@
         }
         
         .analyze-btn {
-            background: linear-gradient(45deg, #667eea, #764ba2);
+            background: #2b6cb0;
             color: white;
             border: none;
-            padding: 12px 25px;
-            border-radius: 8px;
-            font-size: 16px;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: transform 0.15s;
         }
         
         .analyze-btn:hover {
@@ -317,38 +346,40 @@
 </head>
 <body>
     <div class="header">
-        <h1>🔌 AEP Dynamic Grid Challenge - Enhanced Dashboard</h1>
-        <p>Real-time Hawaii 40-Bus System Analysis with IEEE 738 Dynamic Ratings</p>
-        <div class="nav-links" style="margin-top: 15px;">
-            <a href="/" style="color: #667eea; text-decoration: none; margin: 0 15px; padding: 8px 16px; border-radius: 5px; transition: background-color 0.2s; background-color: #667eea; color: white;">Main Dashboard</a>
-            <a href="/map" style="color: #667eea; text-decoration: none; margin: 0 15px; padding: 8px 16px; border-radius: 5px; transition: background-color 0.2s;">Grid Map</a>
-            <a href="/n1" style="color: #667eea; text-decoration: none; margin: 0 15px; padding: 8px 16px; border-radius: 5px; transition: background-color 0.2s;">⚡ N-1 Analysis</a>
+        <div>
+            <div class="site-title">AEP Dynamic Grid Challenge - Enhanced Dashboard</div>
+            <div class="site-desc">Real-time Hawaii 40-Bus System Analysis with IEEE 738 dynamic ratings</div>
         </div>
+        <nav class="site-nav" aria-label="Main navigation">
+            <a href="/">Main Dashboard</a>
+            <a href="/map">Grid Map</a>
+            <a href="/n1">N-1 Analysis</a>
+        </nav>
     </div>
     
     <div class="container">
         <div class="controls">
             <div style="background: #e3f2fd; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 2px solid #2196f3;">
-                <h4 style="color: #1565c0; margin-bottom: 10px; text-align: center;">🌡️ Global Weather Conditions</h4>
+                <h4 style="color: #1565c0; margin-bottom: 10px; text-align: center;">Global Weather Conditions</h4>
                 <p style="color: #1976d2; font-size: 14px; text-align: center; margin-bottom: 15px;">
                     <strong>These values affect ALL analysis, charts, maps, and tables below</strong>
                 </p>
                 <div class="control-group">
                     <div class="control-item">
-                        <label for="temperature">🌡️ Ambient Temperature (°C)</label>
+                        <label for="temperature">Ambient Temperature (°C)</label>
                         <input type="number" id="temperature" value="35" min="20" max="70" style="border-color: #2196f3;">
                     </div>
                     <div class="control-item">
-                        <label for="windSpeed">💨 Wind Speed (ft/sec)</label>
+                        <label for="windSpeed">Wind Speed (ft/sec)</label>
                         <input type="number" id="windSpeed" value="2.0" min="0.1" max="10" step="0.1" style="border-color: #2196f3;">
                     </div>
-                    <button class="analyze-btn" onclick="analyzeCurrentConditions()">🔍 Analyze Current Conditions</button>
-                    <button class="analyze-btn" onclick="findFirstOverload()">🌡️ Find First Overload</button>
+                    <button class="analyze-btn" onclick="analyzeCurrentConditions()">Analyze Current Conditions</button>
+                    <button class="analyze-btn" onclick="findFirstOverload()">Find First Overload</button>
                 </div>
             </div>
             
             <div class="card" id="analysisSection" style="margin-top: 20px;">
-                <h3>📊 Current Conditions Analysis</h3>
+                <h3>Current Conditions Analysis</h3>
                 <div id="analysisResults" class="loading">
                     Click "Analyze Current Conditions" to see detailed analysis...
                 </div>
@@ -357,7 +388,7 @@
         
         <div class="map-section">
             <div class="card">
-                <h3>🗺️ Interactive Hawaii Grid Map</h3>
+                <h3>Interactive Hawaii Grid Map</h3>
                 <div id="map"></div>
                 <p style="margin-top: 10px; color: #666; font-size: 14px;">
                     Lines are color-coded: <span style="color: #4caf50;">Green (Normal)</span>, 
@@ -371,7 +402,7 @@
 
         
         <div class="card">
-            <h3>📈 Temperature vs System Stress</h3>
+            <h3>Temperature vs System Stress</h3>
             <div class="chart-container">
                 <canvas id="tempChart"></canvas>
             </div>
@@ -379,7 +410,7 @@
         
         <div class="card lines-table">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h3 style="margin: 0;">⚡ Critical Lines Analysis</h3>
+                <h3 style="margin: 0;">Critical Lines Analysis</h3>
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <label for="lineCount" style="font-size: 14px; color: #666;">Show:</label>
                     <select id="lineCount" onchange="updateLinesDisplay()" style="padding: 5px; border: 1px solid #e0e0e0; border-radius: 5px;">
@@ -397,18 +428,7 @@
             </div>
         </div>
         
-        <div class="card">
-            <div class="key-findings">
-                <h4>🎯 Interactive Features</h4>
-                <ul>
-                    <li><strong>🗺️ Live Map:</strong> Click transmission lines to see real-time loading data</li>
-                    <li><strong>🌡️ Temperature Control:</strong> Adjust temperature to see system stress changes</li>
-                    <li><strong>💨 Wind Impact:</strong> Modify wind speed to see cooling effects</li>
-                    <li><strong>📊 Real-time Analysis:</strong> All data updates automatically using IEEE 738 standards</li>
-                    <li><strong>🔍 Challenge Solution:</strong> Based on official AEP Dynamic Grid Challenge methodology</li>
-                </ul>
-            </div>
-        </div>
+        
     </div>
 
     <script>
@@ -440,7 +460,7 @@
             const wind = document.getElementById('windSpeed').value;
             
             // Show loading state
-            document.getElementById('analysisResults').innerHTML = '<div class="loading">🔍 Analyzing current conditions...</div>';
+            document.getElementById('analysisResults').innerHTML = '<div class="loading">Analyzing current conditions...</div>';
             
             try {
                 // Run all analyses
@@ -459,7 +479,7 @@
                 console.error('Error:', error);
                 document.getElementById('analysisResults').innerHTML = `
                     <div style="text-align: center; padding: 20px; color: #f44336;">
-                        <h4>❌ Analysis Error</h4>
+                        <h4>Analysis Error</h4>
                         <p>Unable to complete analysis</p>
                     </div>
                 `;
@@ -531,7 +551,7 @@
                     </div>
                     
                     <div style="margin-top: 20px;">
-                        <h4 style="color: #2c3e50; margin-bottom: 10px;">📍 Most Loaded Line:</h4>
+                        <h4 style="color: #2c3e50; margin-bottom: 10px;">Most Loaded Line:</h4>
                         <p style="font-weight: bold; margin-bottom: 10px;">${mostLoadedLine.branch_name}</p>
                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
                             <div style="text-align: center; padding: 10px; background: #f8f9fa; border-radius: 5px;">
@@ -553,17 +573,17 @@
                     
                     ${overloadedLines.length > 0 ? `
                         <div style="margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.1); border-radius: 5px; font-size: 13px;">
-                            <strong>⚠️ Warning:</strong> ${overloadedLines.length} line${overloadedLines.length > 1 ? 's are' : ' is'} overloaded (>100%). 
+                            <strong>Warning:</strong> ${overloadedLines.length} line${overloadedLines.length > 1 ? 's are' : ' is'} overloaded (>100%). 
                             Consider reducing load or upgrading conductors.
                         </div>
                     ` : data.summary.critical > 0 ? `
                         <div style="margin-top: 15px; padding: 10px; background: rgba(244,67,54,0.1); border-radius: 5px; font-size: 13px;">
-                            <strong>⚠️ Caution:</strong> ${data.summary.critical} line${data.summary.critical > 1 ? 's are' : ' is'} in critical range (90-100%). 
+                            <strong>Caution:</strong> ${data.summary.critical} line${data.summary.critical > 1 ? 's are' : ' is'} in critical range (90-100%). 
                             Monitor closely as temperature increases.
                         </div>
                     ` : `
                         <div style="margin-top: 15px; padding: 10px; background: rgba(76,175,80,0.1); border-radius: 5px; font-size: 13px;">
-                            <strong>✅ Status:</strong> All lines are operating within safe limits under these conditions.
+                            <strong>Status:</strong> All lines are operating within safe limits under these conditions.
                         </div>
                     `}
                 </div>
@@ -599,7 +619,7 @@
             const linesToShow = lineCount === 'all' ? currentLinesData : currentLinesData.slice(0, parseInt(lineCount));
             
             // Update table title
-            document.querySelector('.lines-table h3').innerHTML = `⚡ Critical Lines Analysis (${temp}°C, ${wind} ft/s)`;
+            document.querySelector('.lines-table h3').innerHTML = `Critical Lines Analysis (${temp}°C, ${wind} ft/s)`;
             
             const tableHtml = `
                 <div class="table-container">
@@ -675,7 +695,7 @@
             const wind = document.getElementById('windSpeed').value;
             
             // Update chart title
-            document.querySelector('.card:has(#tempChart) h3').innerHTML = `📈 Temperature vs System Stress (Wind: ${wind} ft/s)`;
+            document.querySelector('.card:has(#tempChart) h3').innerHTML = `Temperature vs System Stress (Wind: ${wind} ft/s)`;
             
             if (tempChart) {
                 tempChart.destroy();
@@ -772,7 +792,7 @@
             const wind = document.getElementById('windSpeed').value;
             
             // Update map title
-            document.querySelector('.map-section .card h3').innerHTML = `🗺️ Interactive Hawaii Grid Map (${temp}°C, ${wind} ft/s)`;
+            document.querySelector('.map-section .card h3').innerHTML = `Interactive Hawaii Grid Map (${temp}°C, ${wind} ft/s)`;
             
             try {
                 const response = await fetch(`/api/gis_data?temp=${temp}&wind=${wind}`);
@@ -838,7 +858,7 @@
             const wind = document.getElementById('windSpeed').value;
             
             // Show loading state in analysis section
-            document.getElementById('analysisResults').innerHTML = '<div class="loading">🔍 Analyzing temperature range to find first overload...</div>';
+            document.getElementById('analysisResults').innerHTML = '<div class="loading">Analyzing temperature range to find first overload...</div>';
             
             try {
                 const response = await fetch(`/api/find_first_overload?wind=${wind}`);
@@ -851,13 +871,13 @@
                     const html = `
                         <div class="overload-result ${resultClass}">
                             <div class="overload-temp">
-                                🌡️ First Overload at ${data.critical_temperature}°C
+                                First overload at ${data.critical_temperature}°C
                             </div>
                             <p style="text-align: center; margin-bottom: 15px; color: #666;">
                                 Wind Speed: ${data.wind_speed} ft/sec | Total Overloaded Lines: ${data.total_overloaded}
                             </p>
                             
-                            <h4 style="color: #d32f2f; margin-bottom: 10px;">📍 Most Critical Line:</h4>
+                            <h4 style="color: #d32f2f; margin-bottom: 10px;">Most Critical Line:</h4>
                             <p style="font-weight: bold; margin-bottom: 10px;">${line.branch_name}</p>
                             
                             <div class="line-details">
@@ -892,7 +912,7 @@
                             </div>
                             
                             <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.7); border-radius: 5px; font-size: 13px;">
-                                <strong>💡 Answer:</strong> Lines start to overload at ${data.critical_temperature}°C. 
+                                <strong>Answer:</strong> Lines start to overload at ${data.critical_temperature}°C. 
                                 Line ${line.name} (${line.branch_name}) reaches ${line.loading.toFixed(1)}% loading, 
                                 exceeding the 100% thermal limit.
                             </div>
@@ -914,7 +934,7 @@
                 } else {
                     document.getElementById('analysisResults').innerHTML = `
                         <div style="text-align: center; padding: 20px; color: #4caf50;">
-                            <h4>✅ No Overloads Found</h4>
+                            <h4>No overloads found</h4>
                             <p>No transmission lines exceed 100% loading in the temperature range 25-70°C</p>
                             <p style="font-size: 14px; color: #666; margin-top: 10px;">
                                 Wind Speed: ${data.wind_speed} ft/sec
@@ -927,7 +947,7 @@
                 console.error('Error finding first overload:', error);
                 document.getElementById('analysisResults').innerHTML = `
                     <div style="text-align: center; padding: 20px; color: #f44336;">
-                        <h4>❌ Analysis Error</h4>
+                        <h4>Analysis Error</h4>
                         <p>Unable to complete first overload analysis</p>
                     </div>
                 `;

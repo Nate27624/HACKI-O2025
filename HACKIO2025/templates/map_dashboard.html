@@ -15,15 +15,48 @@
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f5f5;
+            background: #f7f8fa;
         }
         
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: #ffffff;
+            border-bottom: 1px solid #e6eef8;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .header .site-title {
+            font-size: 18px;
+            color: #2c3e50;
+            font-weight: 700;
+        }
+
+        .header .site-desc {
+            font-size: 13px;
+            color: #667085;
+            margin-top: 4px;
+        }
+
+        .site-nav a {
+            color: #2b6cb0;
+            text-decoration: none;
+            margin-left: 12px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .site-nav a.active {
+            background: #eaf3ff;
+            color: #1d4e89;
+        }
+
+        @media (max-width: 720px) {
+            .header { flex-direction: column; align-items: flex-start; }
+            .site-nav { margin-top: 8px; }
         }
         
         .controls {
@@ -109,13 +142,15 @@
 </head>
 <body>
     <div class="header">
-        <h1>🗺️ AEP Dynamic Grid Challenge - Interactive Hawaii Grid Map</h1>
-        <p>Real-time transmission line loading visualization with IEEE 738 dynamic ratings</p>
-        <div class="nav-links" style="margin-top: 15px;">
-            <a href="/" style="color: white; text-decoration: none; margin: 0 15px; padding: 8px 16px; border-radius: 5px; transition: background-color 0.2s; border: 1px solid rgba(255,255,255,0.3);">Main Dashboard</a>
-            <a href="/map" style="color: white; text-decoration: none; margin: 0 15px; padding: 8px 16px; border-radius: 5px; transition: background-color 0.2s; background-color: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.5);">Grid Map</a>
-            <a href="/n1" style="color: white; text-decoration: none; margin: 0 15px; padding: 8px 16px; border-radius: 5px; transition: background-color 0.2s; border: 1px solid rgba(255,255,255,0.3);">⚡ N-1 Analysis</a>
+        <div>
+            <div class="site-title">AEP Dynamic Grid Challenge - Interactive Grid Map</div>
+            <div class="site-desc">Real-time transmission line loading visualization with IEEE 738 dynamic ratings</div>
         </div>
+        <nav class="site-nav" aria-label="Main navigation">
+            <a href="/">Main Dashboard</a>
+            <a href="/map" class="active">Grid Map</a>
+            <a href="/n1">N-1 Analysis</a>
+        </nav>
     </div>
     
     <div class="controls">
@@ -127,7 +162,7 @@
             <label for="windSpeed">Wind Speed (ft/sec)</label>
             <input type="number" id="windSpeed" value="2.0" min="0.1" max="10" step="0.1">
         </div>
-        <button style="background: linear-gradient(45deg, #667eea, #764ba2); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer;" onclick="findFirstOverload()">🌡️ Find First Overload</button>
+    <button style="background: #2b6cb0; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 600; cursor: pointer;" onclick="findFirstOverload()">Find First Overload</button>
         <div id="systemStatus" class="status-display">
             Loading...
         </div>
@@ -302,14 +337,14 @@
                     
                     // Show alert with results
                     const line = data.first_overload_line;
-                    alert(`🌡️ First Overload Found!\n\nTemperature: ${data.critical_temperature}°C\nLine: ${line.branch_name}\nLoading: ${line.loading.toFixed(1)}%\nConductor: ${line.conductor}\n\nMap updated to show critical temperature conditions.`);
+                    alert(`First overload found.\n\nTemperature: ${data.critical_temperature}°C\nLine: ${line.branch_name}\nLoading: ${line.loading.toFixed(1)}%\nConductor: ${line.conductor}\n\nMap updated to show critical temperature conditions.`);
                 } else {
-                    alert('✅ No overloads found in temperature range 25-70°C');
+                    alert('No overloads found in temperature range 25-70°C');
                 }
                 
             } catch (error) {
                 console.error('Error finding first overload:', error);
-                alert('❌ Error analyzing first overload');
+                alert('Error analyzing first overload');
             }
         }
     </script>
